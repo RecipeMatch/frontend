@@ -16,18 +16,37 @@ ios/
 # Expo
 .expo/
 .expo-shared/
+dist/
+web-build/
+expo-env.d.ts
 
-# Generated files by npm
-package-lock.json
-yarn.lock
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# Mac System files
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
 .DS_Store
+*.pem
 
-# Environment variables
+# Local env files
 .env
 .env.local
 .env.*.local
+
+# TypeScript
+*.tsbuildinfo
 
 # Editor-specific files
 .idea/
@@ -36,3 +55,6 @@ yarn.lock
 
 # Temporary system files
 Thumbs.db
+
+# Other
+app-example
