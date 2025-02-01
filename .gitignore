@@ -58,3 +58,6 @@ Thumbs.db
 
 # Other
 app-example
+
+# 환경 변수 파일 숨기기
+.env

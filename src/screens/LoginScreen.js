@@ -5,15 +5,15 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthP
 import { useAuthRequest } from "expo-auth-session/providers/google"; // ✅ Google 모듈 직접 불러오기
 import styled from "styled-components/native"; // Styled Components 유지
 import * as WebBrowser from "expo-web-browser";
-import { Platform } from "react-native";
+import { EXPO_CLIENT_ID, ANDROID_CLIENT_ID, WEB_CLIENT_ID } from "@env"; // 🔹 .env에서 값 불러오기
 
 WebBrowser.maybeCompleteAuthSession(); // ✅ 웹 브라우저 인증 완료 설정
 
 // 🔹 Google 로그인 설정
 const config = {
-  expoClientId: "872848629680-veq9d2h5p270qpder2j1jelvths5stev.apps.googleusercontent.com",
-  androidClientId: "872848629680-a5bml86ech9faf9jtd2mr6qki7jegdpf.apps.googleusercontent.com",
-  webClientId: "872848629680-mkqahn8lgsng4e9eg8e0p3p220svimn5.apps.googleusercontent.com",
+  expoClientId: EXPO_CLIENT_ID,
+  androidClientId: ANDROID_CLIENT_ID,
+  webClientId: WEB_CLIENT_ID,
 };
 
 const LoginScreen = () => {

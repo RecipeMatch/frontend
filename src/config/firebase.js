@@ -1,16 +1,25 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // AsyncStorage 추가
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { 
+  FIREBASE_API_KEY, 
+  FIREBASE_AUTH_DOMAIN, 
+  FIREBASE_PROJECT_ID, 
+  FIREBASE_STORAGE_BUCKET, 
+  FIREBASE_MESSAGING_SENDER_ID, 
+  FIREBASE_APP_ID, 
+  FIREBASE_MEASUREMENT_ID 
+} from "@env"; // 🔹 .env 변수 불러오기
 
-// Firebase 설정 정보
+// 🔹 Firebase 설정 정보 (환경 변수 사용)
 const firebaseConfig = {
-  apiKey: "AIzaSyD5yPs9kXv7RvgWP5SNu2O--_sW2wA7zYA",
-  authDomain: "recipematch-6b729.firebaseapp.com",
-  projectId: "recipematch-6b729",
-  storageBucket: "recipematch-6b729.firebasestorage.app",
-  messagingSenderId: "872848629680",
-  appId: "1:872848629680:web:24244e12562c4220898075",
-  measurementId: "G-QX2PCQRKEL",
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
+  measurementId: FIREBASE_MEASUREMENT_ID,
 };
 
 // Firebase 앱 초기화
@@ -20,11 +29,5 @@ const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
-// 구글 로그인
-const config = {
-  webClientId: "872848629680-mkqahn8lgsng4e9eg8e0p3p220svimn5.apps.googleusercontent.com",
-};
 
-
-// Firebase 인증 내보내기
 export { auth };
