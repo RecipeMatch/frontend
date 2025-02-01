@@ -3,8 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { auth } from "../config/firebase";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { useAuthRequest } from "expo-auth-session/providers/google"; // ✅ Google 모듈 직접 불러오기
-import { makeRedirectUri } from "expo-auth-session"; // ✅ makeRedirectUri 별도로 불러오기
 import styled from "styled-components/native"; // Styled Components 유지
+import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
+
+WebBrowser.maybeCompleteAuthSession(); // ✅ 웹 브라우저 인증 완료 설정
 
 // 🔹 Google 로그인 설정
 const config = {
@@ -20,42 +23,82 @@ const LoginScreen = () => {
   const [rememberMe, setRememberMe] = useState(false);
 
   // 🔹 Google 로그인 요청 설정
-  const [request, response, promptAsync] = useAuthRequest({
-    clientId: config.webClientId,
-    scopes: ["profile", "email"],
-    redirectUri: makeRedirectUri({
-      useProxy: true,
-    }),
-  });
+  const redirectUri = "https://auth.expo.io/@ak1374/my-app";  // ✅ 직접 지정 (Expo에서 사용하는 로그인 URL)
 
-  // 🔹 Google 로그인 처리
+  console.log("📌 현재 redirectUri:", redirectUri);  // 🚀 URI가 올바르게 설정되었는지 확인!
+  console.log("📌 현재 Expo clientId:", config.expoClientId);
+  console.log("📌 현재 Android clientId:", config.androidClientId);
+  console.log("📌 현재 Web clientId:", config.webClientId);
+  console.log("🔍 최종 Google 요청 URI:", request?.url);
+
+  const [request, response, promptAsync] = useAuthRequest(
+    {
+      clientId: config.webClientId,  // ✅ 웹 클라이언트 ID 사용
+      scopes: ["profile", "email"],
+      redirectUri: "https://auth.expo.io/@ak1374/my-app",  // ✅ 강제 지정
+    },
+    GoogleAuthProvider
+  );
+  
+
+  // 🔹 Google 로그인 처리 (ID 토큰만 백엔드로 전송)
   useEffect(() => {
     if (response?.type === "success") {
       const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(() => Alert.alert("Google 로그인 성공!", "환영합니다."))
-        .catch((error) => Alert.alert("Google 로그인 실패", error.message));
+
+      if (id_token) {
+        sendIdTokenToBackend(id_token); // ✅ ID 토큰만 백엔드로 전송
+      } else {
+        Alert.alert("Google 로그인 오류", "ID 토큰을 가져오지 못했습니다.");
+      }
     }
   }, [response]);
 
-  // 🔹 이메일 로그인
+  // 🔹 이메일 로그인 (ID 토큰만 백엔드로 전송)
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("로그인 성공!", "환영합니다.");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken(); // ✅ ID 토큰만 가져옴
+
+      sendIdTokenToBackend(idToken); // ✅ 백엔드로 ID 토큰 전송
+
     } catch (error) {
       Alert.alert("로그인 오류", error.message);
     }
   };
 
-  // 🔹 이메일 회원가입
+  // 🔹 이메일 회원가입 (ID 토큰만 백엔드로 전송)
   const handleSignUp = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("회원가입 성공!", "이메일로 가입이 완료되었습니다.");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken(); // ✅ ID 토큰만 가져옴
+
+      sendIdTokenToBackend(idToken); // ✅ 백엔드로 ID 토큰 전송
+
     } catch (error) {
       Alert.alert("회원가입 오류", error.message);
+    }
+  };
+
+  // ✅ ID 토큰을 백엔드로 전송하는 함수 추가
+  const sendIdTokenToBackend = async (idToken) => {
+    try {
+      const response = await fetch("https://your-backend.com/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken }), // ✅ ID 토큰만 전송 (JWT X)
+      });
+
+      const data = await response.json();
+      if (data.jwt) {
+        console.log("서버에서 JWT 반환:", data.jwt);
+      } else {
+        console.error("JWT가 반환되지 않음");
+      }
+    } catch (error) {
+      console.error("서버 통신 오류:", error);
     }
   };
 

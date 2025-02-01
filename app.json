@@ -26,16 +26,26 @@
       [
         "expo-splash-screen",
         {
-         "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d96c73c5-b2f0-4248-b203-85aab39ee831"
+      },
+      "googleClientIds": {
+        "expo": "872848629680-veq9d2h5p270qpder2j1jelvths5stev.apps.googleusercontent.com",
+        "android": "872848629680-a5bmI86ech9fa9fjtd2mr6qkj7jedgpf.apps.googleusercontent.com",
+        "web": "872848629680-mkqahn8lgsng4e9eg8e0p3p220svimn5.apps.googleusercontent.com"
+      },
+      "redirectUri": "https://auth.expo.io/@ak1374/my-app"
     }
   }
 }
