@@ -10,13 +10,7 @@ console.log("✅ Firebase 관련 모듈 가져오기 완료.");  // 모듈 impor
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBlYq3azzuS4N4Fo3cGnkzEW9_0zuQcoec",
-  authDomain: "react-native-recipe-app-cf43a.firebaseapp.com",
-  projectId: "react-native-recipe-app-cf43a",
-  storageBucket: "react-native-recipe-app-cf43a.firebasestorage.app",
-  messagingSenderId: "1091857883173",
-  appId: "1:1091857883173:web:a73750832367b4e409dfcc"
-};
+
 
 console.log("✅ Firebase 설정 로드 완료.");  // Firebase 설정 확인
 
