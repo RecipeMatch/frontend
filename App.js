@@ -6,6 +6,12 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { useEffect, useState } from 'react';
+import { auth } from './firebase';
+import { GoogleAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
+
+console.log("Firebase 모듈 로드됨:", { GoogleAuthProvider, signInWithCredential, signOut });
+
+
 
 export default function App() {
   const [error, setError] = useState();
@@ -19,6 +25,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    console.log('Firebase Auth Instance:', auth); // Firebase Auth가 정상적으로 불러와졌는지 확인
     configureGoogleSignin();
   }, []);
 
@@ -26,31 +33,65 @@ export default function App() {
     console.log('Pressed sign in');
     try {
       await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const tokens = await GoogleSignin.getTokens(); // Access Token 가져오기
-      console.log("Access Token:", tokens.accessToken);
-      console.log('User Info:', userInfo); // 디버깅 로그
-      console.log('ID Token:', userInfo.data?.idToken); // ID Token 디버깅
-      setUserInfo(userInfo);
+      const googleUser = await GoogleSignin.signIn();
+      console.log('Google Login Success:', googleUser);
+  
+      // Google ID Token 받아오기
+      const idToken = googleUser.data?.idToken; // userInfo.data.idToken에서 가져오기
+      console.log('[DEBUG] Google ID Token:', idToken);
+      
+      if (!idToken) {
+         throw new Error('[ERROR] ID Token이 없습니다.');
+        }
+
+      console.log('Google ID Token:', idToken);
+  
+      if (!idToken) {
+        throw new Error('ID Token이 없습니다.');
+      }
+  
+      // Firebase에 ID Token 전달하여 로그인 처리
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+      console.log('Firebase Credential 생성:', googleCredential);
+  
+      const firebaseUser = await signInWithCredential(auth, googleCredential);
+      console.log('Firebase Authentication 성공:', firebaseUser);
+  
+      setUserInfo(firebaseUser.user);
       setError();
     } catch (e) {
-      console.error('Sign In Error:', e); // 에러 디버깅
+      console.error('로그인 오류:', e);
       setError(e);
     }
   };
+  
 
   const logout = async () => {
-    setUserInfo(undefined);
-    GoogleSignin.revokeAccess();
-    GoogleSignin.signOut();
+    console.log('Logging out...');
+    try {
+      setUserInfo(undefined);
+      await GoogleSignin.revokeAccess();
+      await GoogleSignin.signOut();
+      await signOut(auth); // Firebase에서도 로그아웃 추가
+      console.log('로그아웃 성공');
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+    }
   };
+  
 
   return (
     <View style={styles.container}>
       <Text>{JSON.stringify(error)}</Text>
-      {userInfo && <Text>ID Token: {userInfo.data?.idToken || 'ID Token이 없습니다.'}</Text>}
+  
       {userInfo ? (
-        <Button title="LogOut" onPress={logout} />
+        <>
+          <Text>ID Token: {userInfo.stsTokenManager?.accessToken || 'ID Token이 없습니다.'}</Text>
+          <Text>Access Token: {userInfo.stsTokenManager?.accessToken || 'Access Token이 없습니다.'}</Text>
+          <Text>Email: {userInfo.email || '이메일 정보 없음'}</Text>
+          <Text>이름: {userInfo.displayName || '이름 정보 없음'}</Text>
+          <Button title="LogOut" onPress={logout} />
+        </>
       ) : (
         <GoogleSigninButton
           size={GoogleSigninButton.Size.Standard}
@@ -58,9 +99,12 @@ export default function App() {
           onPress={signIn}
         />
       )}
+  
       <StatusBar style="auto" />
     </View>
   );
+  
+    
 }
 
 const styles = StyleSheet.create({
