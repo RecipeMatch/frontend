@@ -1,0 +1,36 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+
+logging:
+  level:
+    org.hibernate.orm.jdbc.bind: TRACE
+
+server:
+  port: 8080
+
+firebase:
+  config:
+
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration:
+    accessToken: 10800000
+    refreshToken: 1209600000
+
+

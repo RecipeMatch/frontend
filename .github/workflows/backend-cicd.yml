@@ -1,0 +1,97 @@
+name: Build & Deploy Backend
+
+on:
+  pull_request:
+    branches: [ "develop" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USERNAME }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Make Docker Env
+        run: |
+            touch ./.env
+            echo "${{ secrets.DOCKER_ENV }}" > ./.env
+
+      - name: Make firebase sdk admin
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: "firebase-adminsdk.json"
+          json: ${{ secrets.FIREBASE }}
+          dir: 'src/main/resources/'
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        env:
+          MYSQL_URL: ${{ secrets.MYSQL_URL }}
+          MYSQL_USERNAME: ${{ secrets.MYSQL_USERNAME }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        run: ./gradlew build
+
+      - name: Test with Gradle
+        env:
+          MYSQL_URL: ${{ secrets.MYSQL_URL }}
+          MYSQL_USERNAME: ${{ secrets.MYSQL_USERNAME }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+        run: ./gradlew test
+
+      - name: Build Docker image
+        run: docker build -t jimineutron/recipematch-backend:latest .
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Push to DockerHub
+        run: docker push jimineutron/recipematch-backend:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      #    - name: SSH to EC2 and deploy
+      #      uses: appleboy/ssh-action@master
+      #      with:
+      #        host: ${{ secrets.EC2_HOST }}
+      #        username: ${{ secrets.EC2_USERNAME }}
+      #        key: ${{ secrets.EC2_SSH_KEY }}
+      #        script: |
+      #          sudo docker
+      #          sudo docker rm -f $(sudo docker ps -qa)
+      #          sudo docker pull jimineutron/recipematch-backend:latest
+      #          sudo docker run -d -p 8080:8080 jimineutron/recipematch-backend:latest
+
+      - name: Notify Slack
+        if: ${{ success() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#00FF00'
+          SLACK_TITLE: 'Build and Deploy'
+          SLACK_TEXT: '✅ **백엔드 배포 성공**
+          - Docker 이미지: jimineutron/recipematch-backend:latest'
