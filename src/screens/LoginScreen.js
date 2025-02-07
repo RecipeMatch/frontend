@@ -6,6 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import { auth } from "../config/firebase"; // Firebase 설정 불러오기
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { Alert } from 'react-native';
 
 const { androidClientId, webClientId } = Constants.expoConfig.extra;
 
@@ -17,25 +18,23 @@ export default function LoginScreen() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: androidClientId,
     webClientId: webClientId,
-    scopes: ["profile", "email"],
+    scopes: ["profile", "email", "openid"] // openid 스코프 추가
   });
 
   useEffect(() => {
+    console.log("🔥 Google 로그인 응답:", response);
+  
     if (response?.type === "success") {
-      console.log("✅ Google 로그인 성공:", response);
-
-      // Google 로그인 정보에서 ID 토큰 가져오기
-      const { id_token } = response.authentication;
+      const { id_token } = response.params;
       const credential = GoogleAuthProvider.credential(id_token);
-
-      // Firebase에 로그인 처리
+  
       signInWithCredential(auth, credential)
         .then((userCredential) => {
-          console.log("🔥 Firebase 로그인 성공:", userCredential);
-          navigation.replace("Home"); // 로그인 후 홈 화면으로 이동
+          console.log("✅ 로그인 성공:", userCredential.user);
+          navigation.replace("Home");  // 로그인 후 홈 화면 이동
         })
         .catch((error) => {
-          console.error("❌ Firebase 로그인 실패:", error);
+          console.error("❌ Firebase 로그인 에러:", error);
         });
     }
   }, [response]);
