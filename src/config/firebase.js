@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import {
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
@@ -10,14 +11,7 @@ import {
   FIREBASE_MEASUREMENT_ID,
 } from "@env";
 
-console.log("FIREBASE_API_KEY:", FIREBASE_API_KEY);
-console.log("FIREBASE_AUTH_DOMAIN:", FIREBASE_AUTH_DOMAIN);
-console.log("FIREBASE_PROJECT_ID:", FIREBASE_PROJECT_ID);
-console.log("FIREBASE_STORAGE_BUCKET:", FIREBASE_STORAGE_BUCKET);
-console.log("FIREBASE_MESSAGING_SENDER_ID:", FIREBASE_MESSAGING_SENDER_ID);
-console.log("FIREBASE_APP_ID:", FIREBASE_APP_ID);
-console.log("FIREBASE_MEASUREMENT_ID:", FIREBASE_MEASUREMENT_ID);
-
+// Firebase 설정
 const firebaseConfig = {
   apiKey: FIREBASE_API_KEY,
   authDomain: FIREBASE_AUTH_DOMAIN,
@@ -28,7 +22,12 @@ const firebaseConfig = {
   measurementId: FIREBASE_MEASUREMENT_ID,
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
+// Firebase 초기화
+const app = initializeApp(firebaseConfig);
+
+// Firebase Auth 초기화 (AsyncStorage 추가)
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+});
 
 export { auth };
