@@ -36,3 +36,9 @@ useExpoModules()
 
 include ':app'
 includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
+
+include ':expo-dev-menu'
+project(':expo-dev-menu').projectDir = new File(rootProject.projectDir, '../node_modules/expo-dev-menu/android')
+
+include ':expo-dev-client'
+project(':expo-dev-client').projectDir = new File(rootProject.projectDir, '../node_modules/expo-dev-client/android')

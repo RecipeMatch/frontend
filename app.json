@@ -22,7 +22,7 @@
     },
     "web": {
       "bundler": "webpack",
-      "output": "export",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [

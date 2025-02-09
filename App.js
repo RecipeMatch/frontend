@@ -2,17 +2,19 @@ import React from "react";
 import { registerRootComponent } from "expo";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { AuthProvider } from "./src/context/AuthContext";
+import { StatusBar } from "react-native";
+import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 
-// 네비게이션 스택 생성
 const Stack = createStackNavigator();
 
-// 네비게이션을 분리하여 유지보수 용이하게 함
 function NavigationProvider() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
@@ -20,9 +22,15 @@ function NavigationProvider() {
   );
 }
 
-// Expo에서 `App.js`를 정상적으로 인식하도록 등록
 export default function App() {
-  return <NavigationProvider />;
+  return (
+    <>
+      <StatusBar backgroundColor="transparent" translucent={true} />
+      <AuthProvider>
+        <NavigationProvider />
+      </AuthProvider>
+    </>
+  );
 }
 
 registerRootComponent(App);
