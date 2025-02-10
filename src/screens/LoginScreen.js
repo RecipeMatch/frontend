@@ -67,7 +67,6 @@ export default function LoginScreen() {
   return (
     <ImageBackground source={LoginBackground} style={styles.backgroundImage}>
       <View style={styles.overlay}>
-        <Text style={styles.title}>로그인 방법을 선택하세요</Text>
         <TouchableOpacity style={styles.googleButton} onPress={() => promptAsync()}>
           <AntDesign name="google" size={24} color="#fff" style={styles.icon} />
           <Text style={styles.googleButtonText}>Sign in with Google</Text>
@@ -86,7 +85,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // ✅ 어두운 반투명 오버레이 추가 (가독성 향상)
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // ✅ 어두운 반투명 오버레이 추가 (가독성 향상)
     padding: 20,
     borderRadius: 10,
     alignItems: "center",

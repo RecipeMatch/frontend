@@ -1,8 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
-// 배경 이미지 경로 (사용자 첨부 이미지 적용)
 import BackgroundImage from "../../assets/images/food_welcome.jpg";
 
 export default function WelcomeScreen() {
@@ -11,10 +9,10 @@ export default function WelcomeScreen() {
   return (
     <ImageBackground source={BackgroundImage} style={styles.backgroundImage}>
       <View style={styles.overlay}>
-        <Text style={styles.title}>Start Cooking</Text>
-        <Text style={styles.subtitle}>Let's join our community to cook better food!</Text>
+        <Text style={styles.title}>RecipeMatch</Text>
+        <Text style={styles.subtitle}>쉽고 맛있게, 나만의 레시피!</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.buttonText}>Get Started</Text>
+          <Text style={styles.buttonText}>🍽 요리 시작!</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -30,32 +28,39 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // ✅ 어두운 반투명 레이어 추가 (가독성 향상)
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingVertical: 30,
+    paddingHorizontal: 40,
+    borderRadius: 15,
     alignItems: "center",
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "bold",
-    color: "#fff", // ✅ 흰색으로 가독성 강화
-    marginBottom: 10,
+    color: "#fff",
+    marginBottom: 12,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    color: "#ddd", // ✅ 조금 연한 흰색으로 가독성 강화
+    fontSize: 18,
+    color: "#f8f8f8",
     textAlign: "center",
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#2ecc71",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 8,
+    backgroundColor: "#1FCC79",
+    paddingVertical: 14,
+    paddingHorizontal: 38,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
 });
