@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useIsFocused } from "@react-navigation/native";
-import BottomTab from "../../components/BottomTab";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -65,7 +64,20 @@ const HomeScreen = () => {
       )}
 
       {/* 🔻 하단 네비게이션 바 */}
-      <BottomTab />
+      <View style={styles.bottomTab}>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={styles.tabButton}>
+          <Ionicons name="home" size={28} color={isFocused ? "#1FCC79" : "#777"} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Upload")} style={styles.tabButton}>
+          <Ionicons name="add-circle-outline" size={28} color="#777" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Notification")} style={styles.tabButton}>
+          <Ionicons name="notifications-outline" size={28} color="#777" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Profile")} style={styles.tabButton}>
+          <Ionicons name="person-outline" size={28} color="#777" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
