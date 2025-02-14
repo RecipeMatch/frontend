@@ -52,10 +52,7 @@ export default function LoginScreen() {
               return;
             }
 
-            console.log("✅ 로그인 성공:", userEmail, accessToken);
-            console.log("📌 login() 호출: ", accessToken, userEmail); // 🔥 확인 로그 추가
-            await login(accessToken, userEmail);
-            
+            await login(accessToken);
             navigation.replace("Home");
           } catch (error) {
             console.error("❌ 백엔드 연결 실패:", error.response?.data || error.message);

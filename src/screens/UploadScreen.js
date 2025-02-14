@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Slider } from "react-native-elements";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
-import BottomTab from "../../components/BottomTab";
 
 const UploadScreen = () => {
   const navigation = useNavigation();
@@ -86,9 +85,7 @@ const UploadScreen = () => {
       <TouchableOpacity style={styles.nextButton} onPress={() => console.log("Next Step")}>
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
-      <BottomTab />
     </View>
-    
   );
 };
 
