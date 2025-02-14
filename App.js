@@ -7,6 +7,7 @@ import { StatusBar } from "react-native";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import HomeScreen from "./src/screens/HomeScreen";
+import UploadScreen from "./src/screens/UploadScreen";
 
 const Stack = createStackNavigator();
 
@@ -17,6 +18,7 @@ function NavigationProvider() {
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Upload" component={UploadScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
