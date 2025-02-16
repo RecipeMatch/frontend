@@ -46,7 +46,7 @@ export default function ProfileScreen() {
       {/* 전화번호 */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>📞 전화번호</Text>
-        <TextInput style={styles.input} value={userInfo?.phone || "전화번호 없음"} editable={false} />
+        <TextInput style={styles.input} value={userInfo?.phoneNumber || "전화번호 없음"} editable={false} />
       </View>
 
       {/* 프로필 수정 버튼 */}
