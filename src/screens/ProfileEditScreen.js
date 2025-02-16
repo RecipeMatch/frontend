@@ -9,12 +9,15 @@ import BottomTab from "../../components/BottomTab";
 
 export default function ProfileEditScreen() {
   const { userInfo, setUserInfo } = useContext(AuthContext);
+  // 🔥 **여기에 콘솔로그 추가!**
+  console.log("✅ AuthContext에서 가져온 userInfo:", userInfo);
+  console.log("✅ setUserInfo 함수 확인:", typeof setUserInfo);
   const [nickname, setNickname] = useState(userInfo?.nickname || "");
-  const [phone, setPhone] = useState(userInfo?.phone || "");
+  const [phoneNumber, setPhoneNumber] = useState(userInfo?.phoneNumber || ""); // ✅ 변수명 변경
   const navigation = useNavigation();
 
   const handleUpdate = async () => {
-    console.log("🚀 사용자 정보 업데이트 요청:", { nickname, phone });
+    console.log("🚀 사용자 정보 업데이트 요청:", { nickname, phoneNumber });
 
     try {
       const userToken = await AsyncStorage.getItem("userToken");
@@ -28,12 +31,11 @@ export default function ProfileEditScreen() {
       }
 
       console.log("🚀 백엔드 사용자 정보 업데이트 요청:", `${API_BASE_URL}/api/users/updateInfo`);
-      console.log("📩 요청 데이터:", { uid: userEmail, nickname, phone });
-      console.log("📩 백엔드에 보낼 데이터:", { uid: userEmail, nickname, phone });
+      console.log("📩 요청 데이터:", { uid: userEmail, nickname, phoneNumber });
 
       const response = await axios.put(
         `${API_BASE_URL}/api/users/updateInfo`,
-        { uid: userEmail, nickname, phone },
+        { uid: userEmail, nickname, phoneNumber }, // ✅ phone → phoneNumber 변경
         { headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` } }
       );
 
@@ -42,10 +44,10 @@ export default function ProfileEditScreen() {
       if (response.status === 200) {
         // ✅ AsyncStorage에도 업데이트된 정보 저장
         await AsyncStorage.setItem("userNickname", nickname);
-        await AsyncStorage.setItem("userPhone", phone);
+        await AsyncStorage.setItem("userPhoneNumber", phoneNumber); // ✅ 변수명 변경
 
         // ✅ AuthContext 업데이트
-        setUserInfo({ ...userInfo, nickname, phone });
+        setUserInfo({ ...userInfo, nickname, phoneNumber });
 
         Alert.alert("✅ 성공", "사용자 정보가 업데이트되었습니다.");
         navigation.navigate("Profile"); // 수정 완료 후 ProfileScreen으로 이동
@@ -67,7 +69,7 @@ export default function ProfileEditScreen() {
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>📞 전화번호:</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <TextInput style={styles.input} value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
       </View>
 
       <TouchableOpacity onPress={handleUpdate} style={styles.button}>
