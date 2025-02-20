@@ -30,17 +30,24 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (response?.type === "success") {
+      console.log("🚀 Google 로그인 성공:", response);
+
       const { id_token } = response.params;
       const credential = GoogleAuthProvider.credential(id_token);
 
       signInWithCredential(auth, credential)
         .then(async (userCredential) => {
           const userEmail = userCredential.user.email;
+          console.log("✅ Firebase에서 받은 이메일:", userEmail); // ✅ 이메일 값 확인
+
           if (!userEmail) {
-            throw new Error("Firebase 인증 오류: 이메일 정보를 가져올 수 없습니다.");
+            throw new Error("❌ Firebase 인증 오류: 이메일 정보를 가져올 수 없습니다.");
           }
 
           try {
+            console.log("🚀 백엔드 로그인 요청:", `${API_BASE_URL}/api/users/login`);
+            console.log("📩 요청 데이터:", { uid: userEmail });
+
             const backendResponse = await axios.post(
               `${API_BASE_URL}/api/users/login`,
               { uid: userEmail },
@@ -48,18 +55,22 @@ export default function LoginScreen() {
             );
 
             const accessToken = backendResponse.data?.accessToken;
+            console.log("✅ 백엔드에서 받은 토큰:", accessToken);
+
             if (!accessToken) {
+              console.error("❌ accessToken을 받지 못했습니다.");
               return;
             }
 
-            await login(accessToken);
+            await login(accessToken, userEmail); // ✅ email 값 넘기기
+            console.log("✅ 로그인 성공, 홈 화면으로 이동");
             navigation.replace("Home");
           } catch (error) {
             console.error("❌ 백엔드 연결 실패:", error.response?.data || error.message);
           }
         })
-        .catch(() => {
-          console.error("❌ Firebase 로그인 에러");
+        .catch((error) => {
+          console.error("❌ Firebase 로그인 에러:", error);
         });
     }
   }, [response]);
@@ -113,4 +124,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
