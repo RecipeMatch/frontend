@@ -18,45 +18,49 @@ export default function ProfileEditScreen() {
 
   const handleUpdate = async () => {
     console.log("🚀 사용자 정보 업데이트 요청:", { nickname, phoneNumber });
-
+  
     try {
+      let userEmail = await AsyncStorage.getItem("userEmail");
       const userToken = await AsyncStorage.getItem("userToken");
-      const userEmail = await AsyncStorage.getItem("userEmail");
-
+  
+      if (!userEmail) {
+        console.warn("⚠️ userEmail이 null입니다. 다시 불러옵니다.");
+        userEmail = userInfo?.email; // ✅ AuthContext에서 email 가져오기
+      }
+  
       console.log("🚀 저장된 userEmail 확인:", userEmail);
       console.log("🚀 저장된 userToken 확인:", userToken);
-
+  
       if (!userToken || !userEmail) {
         throw new Error("로그인이 필요합니다.");
       }
-
+  
       console.log("🚀 백엔드 사용자 정보 업데이트 요청:", `${API_BASE_URL}/api/users/updateInfo`);
       console.log("📩 요청 데이터:", { uid: userEmail, nickname, phoneNumber });
-
+  
       const response = await axios.put(
         `${API_BASE_URL}/api/users/updateInfo`,
-        { uid: userEmail, nickname, phoneNumber }, // ✅ phone → phoneNumber 변경
+        { uid: userEmail, nickname, phoneNumber },
         { headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` } }
       );
-
+  
       console.log("✅ 백엔드 응답 상태 코드:", response.status);
-
+  
       if (response.status === 200) {
-        // ✅ AsyncStorage에도 업데이트된 정보 저장
         await AsyncStorage.setItem("userNickname", nickname);
-        await AsyncStorage.setItem("userPhoneNumber", phoneNumber); // ✅ 변수명 변경
-
-        // ✅ AuthContext 업데이트
+        await AsyncStorage.setItem("userPhoneNumber", phoneNumber);
+  
         setUserInfo({ ...userInfo, nickname, phoneNumber });
-
+  
         Alert.alert("✅ 성공", "사용자 정보가 업데이트되었습니다.");
-        navigation.navigate("Profile"); // 수정 완료 후 ProfileScreen으로 이동
+        navigation.navigate("Profile");
       }
     } catch (error) {
       console.error("❌ 사용자 정보 업데이트 오류:", error.response?.data || error.message);
       Alert.alert("❌ 오류", error.response?.data?.message || "사용자 정보 업데이트에 실패했습니다.");
     }
   };
+  
 
   return (
     <View style={styles.container}>
