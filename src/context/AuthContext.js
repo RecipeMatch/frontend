@@ -24,15 +24,16 @@ export const AuthProvider = ({ children }) => {
         const email = await AsyncStorage.getItem("userEmail");
         const nickname = await AsyncStorage.getItem("userNickname");
         const phoneNumber = await AsyncStorage.getItem("userPhoneNumber");
-
+  
         console.log("✅ 저장된 사용자 정보 확인:", { email, nickname, phoneNumber });
-
+  
+        // 기존 데이터가 있으면 덮어쓰지 않도록 조건 추가
         if (email) {
-          setUserInfo({
+          setUserInfo((prevUserInfo) => ({
             email,
-            nickname: nickname || "닉네임 없음",
-            phoneNumber: phoneNumber || "전화번호 없음",
-          });
+            nickname: nickname || prevUserInfo?.nickname || "닉네임 없음",
+            phoneNumber: phoneNumber || prevUserInfo?.phoneNumber || "전화번호 없음",
+          }));
         }
       } catch (error) {
         console.error("❌ 사용자 정보 불러오기 실패:", error);
@@ -50,13 +51,37 @@ export const AuthProvider = ({ children }) => {
     console.log("🚀 현재 userToken 상태 변경됨:", userToken);
   }, [userToken]);
 
-  const login = async (token) => {
+  const login = async (token, email) => {
     console.log("🚀 로그인 실행! 저장할 토큰:", token);
+    console.log("📩 전달된 email 값 확인:", email);
+  
+    if (!email) {
+      console.error("❌ 이메일 값이 없습니다. 로그인 실패.");
+      return;
+    }
+  
     await AsyncStorage.setItem("userToken", token);
-    const storedToken = await AsyncStorage.getItem("userToken"); // ✅ 저장 확인
+    await AsyncStorage.setItem("userEmail", email);
+  
+    const storedToken = await AsyncStorage.getItem("userToken");
+    const storedEmail = await AsyncStorage.getItem("userEmail");
+  
     console.log("✅ AsyncStorage에 저장된 토큰 확인:", storedToken);
-    setUserToken(storedToken); // ✅ 상태 업데이트
+    console.log("✅ AsyncStorage에 저장된 이메일 확인:", storedEmail);
+  
+    // 기존 닉네임과 전화번호 유지
+    const storedNickname = await AsyncStorage.getItem("userNickname");
+    const storedPhoneNumber = await AsyncStorage.getItem("userPhoneNumber");
+  
+    setUserInfo({
+      email: storedEmail,
+      nickname: storedNickname || "닉네임 없음",
+      phoneNumber: storedPhoneNumber || "전화번호 없음",
+    });
   };
+  
+  
+  
 
   const logout = async () => {
     console.log("🚀 로그아웃 실행! 저장된 토큰 삭제 중...");
@@ -64,7 +89,7 @@ export const AuthProvider = ({ children }) => {
     const checkToken = await AsyncStorage.getItem("userToken"); // ✅ 삭제 확인
     console.log("✅ AsyncStorage에서 토큰 삭제 후 확인:", checkToken);
     setUserToken(null);
-    setUserInfo(null); // ✅ 로그아웃 시 userInfo도 초기화
+    setUserInfo(null); // ✅ 로그아웃 시 userInfo도 초기화 , 이거 삭제시 다시 로그인하면 닉네임,폰번호 유지.
   };
 
   return (
