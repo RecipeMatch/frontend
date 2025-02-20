@@ -98,3 +98,45 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+/*
+const login = async (token, email) => {
+  console.log("🚀 로그인 실행! 저장할 토큰:", token);
+  console.log("📩 전달된 email 값 확인:", email);
+
+  if (!email) {
+    console.error("❌ 이메일 값이 없습니다. 로그인 실패.");
+    return;
+  }
+
+  await AsyncStorage.setItem("userToken", token);
+  await AsyncStorage.setItem("userEmail", email);
+
+  const storedToken = await AsyncStorage.getItem("userToken");
+  const storedEmail = await AsyncStorage.getItem("userEmail");
+
+  console.log("✅ AsyncStorage에 저장된 토큰 확인:", storedToken);
+  console.log("✅ AsyncStorage에 저장된 이메일 확인:", storedEmail);
+
+  try {
+    // 백엔드에서 사용자 정보 가져오기
+    const response = await axios.get(`${API_BASE_URL}/api/users/info?uid=${storedEmail}`);
+    if (response.status === 200) {
+      const { nickname, phoneNumber } = response.data;
+
+      console.log("✅ 백엔드에서 받은 사용자 정보:", { nickname, phoneNumber });
+
+      // AsyncStorage에도 저장
+      await AsyncStorage.setItem("userNickname", nickname || "닉네임 없음");
+      await AsyncStorage.setItem("userPhoneNumber", phoneNumber || "전화번호 없음");
+
+      setUserInfo({ email: storedEmail, nickname, phoneNumber });
+    } else {
+      console.warn("⚠️ 백엔드에서 사용자 정보를 찾을 수 없음. 기본값 설정");
+      setUserInfo({ email: storedEmail, nickname: "닉네임 없음", phoneNumber: "전화번호 없음" });
+    }
+  } catch (error) {
+    console.error("❌ 사용자 정보 가져오기 실패:", error);
+    setUserInfo({ email: storedEmail, nickname: "닉네임 없음", phoneNumber: "전화번호 없음" });
+  }
+};
+*/
