@@ -48,10 +48,16 @@ export default function ProfileScreen() {
         <Text style={styles.label}>📞 전화번호</Text>
         <TextInput style={styles.input} value={userInfo?.phoneNumber || "전화번호 없음"} editable={false} />
       </View>
+      
 
       {/* 프로필 수정 버튼 */}
       <TouchableOpacity onPress={() => navigation.navigate("ProfileEdit")} style={styles.button}>
         <Text style={styles.buttonText}>프로필 수정</Text>
+      </TouchableOpacity>
+
+      {/* 프로필 수정 버튼 */}
+      <TouchableOpacity onPress={() => navigation.navigate("MyRecipeList")} style={styles.button}>
+        <Text style={styles.buttonText}>나의 레시피</Text>
       </TouchableOpacity>
 
       {/* 로그아웃 버튼 */}
