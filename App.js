@@ -28,6 +28,7 @@ function NavigationProvider() {
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ headerShown: false }} />
         <Stack.Screen name="UploadScreen2" component={UploadScreen2} options={{ headerShown: false }} />
         <Stack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} />      
+        <Stack.Screen name="MyRecipeList" component={Myrecipe} options={{ headerShown: false }} /> 
       </Stack.Navigator>
     </NavigationContainer>
   );
