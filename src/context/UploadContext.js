@@ -8,7 +8,8 @@ export const UploadProvider = ({ children }) => {
   const [cookingDuration, setCookingDuration] = useState(30);
   const [ingredients, setIngredients] = useState([]);
   const [equipment, setEquipment] = useState([]);
-  const [steps, setSteps] = useState("");
+  const [steps, setSteps] = useState([]);
+  const [category, setCategory] = useState("한식"); // ✅ 카테고리 상태 추가
 
   return (
     <UploadContext.Provider
@@ -25,6 +26,8 @@ export const UploadProvider = ({ children }) => {
         setEquipment,
         steps,
         setSteps,
+        category,        // ✅ 추가
+        setCategory,     // ✅ 추가
       }}
     >
       {children}

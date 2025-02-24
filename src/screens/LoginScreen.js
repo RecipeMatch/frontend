@@ -34,33 +34,38 @@ export default function LoginScreen() {
       const credential = GoogleAuthProvider.credential(id_token);
 
       signInWithCredential(auth, credential)
-        .then(async (userCredential) => {
-          const userEmail = userCredential.user.email;
-          if (!userEmail) {
-            throw new Error("Firebase 인증 오류: 이메일 정보를 가져올 수 없습니다.");
+      .then(async (userCredential) => {
+        const userUid = userCredential.user.uid;
+        console.log("🔥 Firebase UID:", userUid); // ✅ 로그 추가
+    
+        if (!userUid) {
+          throw new Error("Firebase 인증 오류: UID 정보를 가져올 수 없습니다.");
+        }
+    
+        try {
+          const backendResponse = await axios.post(
+            `${API_BASE_URL}/api/users/login`,
+            { uid: userUid },
+            { headers: { "Content-Type": "application/json" } }
+          );
+    
+          console.log("✅ 백엔드 응답:", backendResponse.data); // ✅ 응답 확인
+    
+          const accessToken = backendResponse.data?.accessToken;
+          if (!accessToken) {
+            return;
           }
-
-          try {
-            const backendResponse = await axios.post(
-              `${API_BASE_URL}/api/users/login`,
-              { uid: userEmail },
-              { headers: { "Content-Type": "application/json" } }
-            );
-
-            const accessToken = backendResponse.data?.accessToken;
-            if (!accessToken) {
-              return;
-            }
-
-            await login(accessToken);
-            navigation.replace("Home");
-          } catch (error) {
-            console.error("❌ 백엔드 연결 실패:", error.response?.data || error.message);
-          }
-        })
-        .catch(() => {
-          console.error("❌ Firebase 로그인 에러");
-        });
+    
+          await login(accessToken);
+          navigation.replace("Home");
+        } catch (error) {
+          console.error("❌ 백엔드 연결 실패:", error.response?.data || error.message);
+        }
+      })
+      .catch(() => {
+        console.error("❌ Firebase 로그인 에러");
+      });
+    
     }
   }, [response]);
 
@@ -113,4 +118,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
