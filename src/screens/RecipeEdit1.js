@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,59 +10,29 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Slider } from "react-native-elements";
 import * as ImagePicker from "expo-image-picker";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
-import { getAuth } from "firebase/auth";
-import { UploadContext } from "../context/UploadContext";
 
-const UploadScreen = () => {
+const RecipeEdit1 = () => {
   const navigation = useNavigation();
-  const {
-    foodName,
-    setFoodName,
-    description,
-    setDescription,
-    image,
-    setImage,
-    category,
-    setCategory,
-    cookingDuration,
-    setCookingDuration,
-  } = useContext(UploadContext);
+  const route = useRoute();
+  const { recipe } = route.params;
 
-  // 로컬 state로 슬라이더 값만 관리 (부모 re-render와 분리)
+  // 기존 레시피 값으로 상태 설정
+  const [foodName, setFoodName] = useState(recipe.recipeName);
+  const [description, setDescription] = useState(recipe.description);
+  const [image, setImage] = useState(recipe.imageUrls?.[0] || null);
+  const [category, setCategory] = useState(recipe.category);
+  const [cookingDuration, setCookingDuration] = useState(recipe.cookingTime);
+
+  // 슬라이더 UI 상태 관리
   const [localDuration, setLocalDuration] = useState(cookingDuration);
 
-  const handleValueChange = useCallback((value) => {
-    setLocalDuration(value);
-  }, []);
-
-  const handleSlidingComplete = useCallback((value) => {
-    setLocalDuration(value);
-    setCookingDuration(value);
-  }, [setCookingDuration]);
-
-  const handleNextPress = useCallback(() => {
-    navigation.navigate("UploadScreen2");
-  }, [navigation]);
-
-  // Firebase Auth: 사용자 이메일 가져오기
-  const [userUid, setUserUid] = useState(null);
-  useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      setUserUid(user.email);
-    } else {
-      console.error("사용자가 로그인되지 않았습니다.");
-    }
-  }, []);
-
+  // 이미지 선택
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -70,20 +40,22 @@ const UploadScreen = () => {
       aspect: [4, 3],
       quality: 1,
     });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+
+    if (!result.canceled && result.assets?.length > 0) {
       setImage(result.assets[0].uri);
     }
   };
 
-  const backAction = useCallback(() => {
-    navigation.navigate("Home");
-    return true;
-  }, [navigation]);
-
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
-    return () => backHandler.remove();
-  }, [backAction]);
+  const handleNextPress = () => {
+    navigation.navigate("RecipeEdit2", {
+      recipe,
+      foodName,
+      description,
+      cookingDuration,
+      category,
+      image,
+    });
+  };
 
   const categoryOptions = [
     { label: "한식", value: "KOREAN" },
@@ -98,13 +70,19 @@ const UploadScreen = () => {
       style={styles.container}
     >
       <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
-      <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.navigate("Home")}>
+      
+      {/* 취소 버튼 */}
+      <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
         <Text style={styles.cancelText}>취소</Text>
       </TouchableOpacity>
+
+      {/* 페이지 표시 */}
       <View style={styles.pageIndicator}>
         <Text style={styles.pageIndicatorText}>1/2</Text>
       </View>
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* 이미지 업로드 */}
         <TouchableOpacity style={styles.imageUploadBox} onPress={pickImage}>
           {image ? (
             <Image source={{ uri: image }} style={styles.imagePreview} />
@@ -116,6 +94,8 @@ const UploadScreen = () => {
             </>
           )}
         </TouchableOpacity>
+
+        {/* 음식 이름 입력 */}
         <Text style={styles.label}>음식 이름</Text>
         <TextInput
           style={styles.input}
@@ -123,6 +103,8 @@ const UploadScreen = () => {
           value={foodName}
           onChangeText={setFoodName}
         />
+
+        {/* 설명 입력 */}
         <Text style={styles.label}>설명</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
@@ -131,37 +113,35 @@ const UploadScreen = () => {
           onChangeText={setDescription}
           multiline
         />
+
+        {/* 요리 시간 (슬라이더) */}
         <Text style={styles.label}>요리 시간 (5분 단위)</Text>
         <Slider
           value={localDuration}
-          onValueChange={handleValueChange}
-          onSlidingComplete={handleSlidingComplete}
+          onValueChange={setLocalDuration}
+          onSlidingComplete={(value) => {
+            setLocalDuration(value);
+            setCookingDuration(value);
+          }}
           minimumValue={5}
           maximumValue={180}
           step={5}
-          // 슬라이더 전체 스타일
           style={styles.slider}
-          // 채워진 트랙(왼쪽 부분) 스타일
           minimumTrackTintColor="#1FCC79"
-          // 남은 트랙(오른쪽 부분) 스타일
           maximumTrackTintColor="#ccc"
-          // 슬라이더 막대(트랙) 자체의 두께 설정
-          trackStyle={{
-            height: 4,           // 원하는 두께로 변경
-            backgroundColor: "#ccc",
-          }}
-          // 슬라이더 손잡이(thumb) 스타일
+          trackStyle={{ height: 4 }}
           thumbStyle={{
-            height: 24,          // thumb 높이
-            width: 24,           // thumb 너비
+            height: 24,
+            width: 24,
             backgroundColor: "#1FCC79",
-            borderRadius: 12,    // 동그랗게 만들기
+            borderRadius: 12,
             borderWidth: 2,
             borderColor: "#fff",
           }}
         />
         <Text style={styles.sliderValue}>{localDuration} 분</Text>
 
+        {/* 카테고리 선택 */}
         <Text style={styles.label}>카테고리</Text>
         <View style={styles.pickerContainer}>
           <Picker
@@ -175,6 +155,8 @@ const UploadScreen = () => {
           </Picker>
         </View>
       </ScrollView>
+
+      {/* 다음 버튼 */}
       <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
         <Text style={styles.nextButtonText}>다음</Text>
       </TouchableOpacity>
@@ -262,4 +244,4 @@ const styles = StyleSheet.create({
   nextButtonText: { fontSize: 18, color: "#fff", fontWeight: "bold" },
 });
 
-export default UploadScreen;
+export default RecipeEdit1;

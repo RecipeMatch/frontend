@@ -6,6 +6,11 @@ import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import HomeScreen from "../screens/HomeScreen";
 import UploadScreen from "../screens/UploadScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import ProfileEditScreen from "../screens/ProfileEditScreen";
+import UploadScreen2 from "../screens/UploadScreen2";
+import SearchScreen from "../screens/SearchScreen";
+import Myrecipe from "../screens/Myrecipe";
 
 const Stack = createStackNavigator();
 
@@ -24,6 +29,11 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Upload" component={UploadScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+            <Stack.Screen name="UploadScreen2" component={UploadScreen2} />
+            <Stack.Screen name="SearchScreen" component={SearchScreen} />
+            <Stack.Screen name="MyRecipeList" component={Myrecipe} />
           </>
         )}
       </Stack.Navigator>

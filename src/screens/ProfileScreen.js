@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from "reac
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../context/AuthContext";
-import BottomTab from "../../components/BottomTab";
+import BottomTab from "../components/BottomTab";
 
 export default function ProfileScreen() {
   const { userInfo, logout } = useContext(AuthContext);
@@ -31,12 +31,6 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>내 프로필</Text>
 
-      {/* 이메일 (읽기 전용) */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.label}>📧 이메일</Text>
-        <TextInput style={[styles.input, styles.disabledInput]} value={userInfo?.email || "이메일 없음"} editable={false} />
-      </View>
-
       {/* 닉네임 */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>👤 닉네임</Text>
@@ -46,12 +40,17 @@ export default function ProfileScreen() {
       {/* 전화번호 */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>📞 전화번호</Text>
-        <TextInput style={styles.input} value={userInfo?.phone || "전화번호 없음"} editable={false} />
+        <TextInput style={styles.input} value={userInfo?.phoneNumber || "전화번호 없음"} editable={false} />
       </View>
-
+      
       {/* 프로필 수정 버튼 */}
       <TouchableOpacity onPress={() => navigation.navigate("ProfileEdit")} style={styles.button}>
         <Text style={styles.buttonText}>프로필 수정</Text>
+      </TouchableOpacity>
+
+      {/* 나의 레시피 버튼 */}
+      <TouchableOpacity onPress={() => navigation.navigate("MyRecipeList")} style={styles.button}>
+        <Text style={styles.buttonText}>나의 레시피</Text>
       </TouchableOpacity>
 
       {/* 로그아웃 버튼 */}
@@ -92,9 +91,6 @@ const styles = StyleSheet.create({
     padding: 10, 
     fontSize: 16, 
   },
-  disabledInput: {
-    color: "#888", 
-  },
   button: { 
     backgroundColor: "#1FCC79", 
     paddingVertical: 15, 
@@ -108,11 +104,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold", 
   },
   logoutButton: { 
-    backgroundColor: "#A0E7A0", // ✅ 빨간색 버튼
+    backgroundColor: "#A0E7A0", // ✅ 로그아웃 버튼 색상 변경
     paddingVertical: 15, 
     alignItems: "center", 
     borderRadius: 8, 
-    marginTop: 10, // ✅ 간격 추가
+    marginTop: 10, 
   },
   logoutText: { 
     color: "#fff", 
