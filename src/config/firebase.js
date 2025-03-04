@@ -1,33 +1,26 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  FIREBASE_API_KEY,
-  FIREBASE_AUTH_DOMAIN,
-  FIREBASE_PROJECT_ID,
-  FIREBASE_STORAGE_BUCKET,
-  FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID,
-  FIREBASE_MEASUREMENT_ID,
-} from "@env";
+console.log("🚀 firebase.js가 실행되었습니다.");  // 실행 여부 확인
+// firebase.js
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 
-// Firebase 설정
+console.log("✅ Firebase 관련 모듈 가져오기 완료.");  // 모듈 import 확인
+
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID,
-  measurementId: FIREBASE_MEASUREMENT_ID,
+    apiKey: "AIzaSyD5yPs9kXv7RvgWP5SNu2O--_sW2wA7zYA",
+    authDomain: "recipematch-6b729.firebaseapp.com",
+    projectId: "recipematch-6b729",
+    storageBucket: "recipematch-6b729.firebasestorage.app",
+    messagingSenderId: "872848629680",
+    appId: "1:872848629680:web:24244e12562c4220898075",
+    measurementId: "G-QX2PCQRKEL"
 };
 
-// Firebase 초기화
-const app = initializeApp(firebaseConfig);
+// Firebase 앱 초기화
+const firebaseApp = initializeApp(firebaseConfig);
+console.log('🔥 Firebase Initialized:', firebaseApp); // Firebase가 정상적으로 초기화되었는지 확인
 
-// Firebase Auth 초기화 (AsyncStorage 추가)
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-});
+// Firebase Auth 가져오기
+const auth = getAuth(firebaseApp);
+console.log('✅ Firebase Auth Loaded:', auth);
 
 export { auth };
