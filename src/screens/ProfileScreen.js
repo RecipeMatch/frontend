@@ -18,9 +18,9 @@ export default function ProfileScreen() {
       {
         text: "로그아웃",
         onPress: async () => {
-          await logout(); // ✅ AuthContext의 logout() 실행
-          await AsyncStorage.clear(); // ✅ 저장된 모든 데이터 삭제
-          navigation.replace("Login"); // ✅ 로그인 화면으로 이동
+          await logout();
+          await AsyncStorage.clear();
+          navigation.replace("Login");
         },
         style: "destructive",
       },
@@ -42,7 +42,37 @@ export default function ProfileScreen() {
         <Text style={styles.label}>📞 전화번호</Text>
         <TextInput style={styles.input} value={userInfo?.phoneNumber || "전화번호 없음"} editable={false} />
       </View>
-      
+
+      {/* 알레르기 음식 */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>🥜 알레르기 음식</Text>
+        <TextInput
+          style={styles.input}
+          value={userInfo?.allergyNames?.join(", ") || "정보 없음"}
+          editable={false}
+        />
+      </View>
+
+      {/* 주방 도구 */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>🍳 주방 도구</Text>
+        <TextInput
+          style={styles.input}
+          value={userInfo?.toolNames?.join(", ") || "정보 없음"}
+          editable={false}
+        />
+      </View>
+
+      {/* 주로 사용하는 재료 */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.label}>🧅 주로 사용하는 재료</Text>
+        <TextInput
+          style={styles.input}
+          value={userInfo?.ingredientNames?.join(", ") || "정보 없음"}
+          editable={false}
+        />
+      </View>
+
       {/* 프로필 수정 버튼 */}
       <TouchableOpacity onPress={() => navigation.navigate("ProfileEdit")} style={styles.button}>
         <Text style={styles.buttonText}>프로필 수정</Text>
@@ -104,7 +134,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold", 
   },
   logoutButton: { 
-    backgroundColor: "#A0E7A0", // ✅ 로그아웃 버튼 색상 변경
+    backgroundColor: "#A0E7A0", 
     paddingVertical: 15, 
     alignItems: "center", 
     borderRadius: 8, 
