@@ -49,19 +49,19 @@ const ProfileEditScreen = () => {
     try {
       let userEmail = await AsyncStorage.getItem("userEmail");
       const userToken = await AsyncStorage.getItem("userToken");
-
+  
       if (!userEmail) {
         userEmail = userInfo?.email;
         if (userEmail) {
           await AsyncStorage.setItem("userEmail", userEmail);
         }
       }
-
+  
       if (!userToken || !userEmail) {
         Alert.alert("❌ 오류", "로그인이 필요합니다. 다시 로그인해주세요.");
         return;
       }
-
+  
       const updatedProfile = {
         uid: userEmail,
         nickname,
@@ -70,28 +70,36 @@ const ProfileEditScreen = () => {
         toolNames: toolNames.filter(item => item.trim() !== ""),
         ingredientNames: ingredientNames.filter(item => item.trim() !== ""),
       };
-
-      console.log("📡 전송할 데이터:", updatedProfile);
-
+  
+      console.log("📡 저장할 updatedProfile 데이터:", JSON.stringify(updatedProfile, null, 2));
+  
       const response = await axios.put(`${API_BASE_URL}/api/users/updateInfo`, updatedProfile, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${userToken}` },
       });
-
+  
       if (response.status === 200) {
         await AsyncStorage.setItem("userNickname", nickname);
         await AsyncStorage.setItem("userPhoneNumber", phoneNumber);
         await AsyncStorage.setItem("userAllergyNames", JSON.stringify(updatedProfile.allergyNames));
         await AsyncStorage.setItem("userToolNames", JSON.stringify(updatedProfile.toolNames));
         await AsyncStorage.setItem("userIngredientNames", JSON.stringify(updatedProfile.ingredientNames));
-
+  
+        console.log("✅ AsyncStorage에 데이터 저장 완료!");
+        console.log("✅ 저장된 userAllergyNames:", await AsyncStorage.getItem("userAllergyNames"));
+        console.log("✅ 저장된 userToolNames:", await AsyncStorage.getItem("userToolNames"));
+        console.log("✅ 저장된 userIngredientNames:", await AsyncStorage.getItem("userIngredientNames"));
+  
         setUserInfo(updatedProfile);
         Alert.alert("✅ 성공", "프로필이 업데이트되었습니다.");
         navigation.goBack();
       }
     } catch (error) {
+      console.error("❌ 프로필 업데이트 중 오류:", error);
       Alert.alert("❌ 오류", "프로필 업데이트에 실패했습니다.");
     }
   };
+  
+  
 
   return (
     <View style={styles.container}>
@@ -197,7 +205,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd", 
     marginBottom: 60,  // 🔥 버튼이 BottomTab 위로 올라오도록 조정
   }
-  
+
 });
 
 export default ProfileEditScreen;
