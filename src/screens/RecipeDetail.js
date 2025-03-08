@@ -10,7 +10,10 @@ const RecipeDetail = ({ route }) => {
   const finalImageUrl = uploadedImageUrl ?? getDefaultImageUrl(recipe.category);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent} // 추가
+    >
       <Text style={styles.title}>{recipe.recipeName}</Text>
 
       {/* 이미지 (레시피 이름 아래, 설명 위) */}
@@ -28,6 +31,12 @@ const RecipeDetail = ({ route }) => {
 
       <Text style={styles.sectionTitle}>📌 카테고리</Text>
       <Text style={styles.info}>{recipe.category}</Text>
+
+      {/* 난이도 섹션 추가 */}
+      <Text style={styles.sectionTitle}>🔥 난이도</Text>
+      <Text style={styles.info}>
+        {recipe.difficulty ? recipe.difficulty : "정보 없음"}
+      </Text>
 
       <Text style={styles.sectionTitle}>🥕 재료</Text>
       <View style={styles.listContainer}>
@@ -62,8 +71,11 @@ const RecipeDetail = ({ route }) => {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    padding: 16, 
     backgroundColor: "#fff" 
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
   title: { 
     fontSize: 24, 

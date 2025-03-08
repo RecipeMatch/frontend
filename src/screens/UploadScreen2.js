@@ -206,7 +206,15 @@ const UploadScreen2 = () => {
       Alert.alert("네트워크 오류", `서버에 연결할 수 없습니다.\n오류: ${error.message}`);
     }    
   };
+  const onUploadSuccess = () => {
+    resetUpload();
+    setSuccessModalVisible(false);
 
+    navigation.reset({
+        index: 0,
+        routes: [{ name: "Home" }], // 스택을 초기화하고 홈 화면만 남김
+    });
+  };
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === "ios" ? "padding" : "height"} 
@@ -316,12 +324,8 @@ const UploadScreen2 = () => {
 
         {/* 업로드 성공 모달 */}
         <SuccessModal
-          visible={successModalVisible}
-          onClose={() => {
-            resetUpload();
-            setSuccessModalVisible(false);
-            navigation.navigate("Home");
-          }}
+            visible={successModalVisible}
+            onClose={onUploadSuccess}
         />
       </View>
     </KeyboardAvoidingView>

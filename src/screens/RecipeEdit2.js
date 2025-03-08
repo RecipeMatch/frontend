@@ -88,10 +88,18 @@ const RecipeEdit2 = () => {
 
             if (res.respInfo?.status >= 200 && res.respInfo?.status < 300) {
               Alert.alert("수정 완료", "레시피가 성공적으로 수정되었습니다.");
-              navigation.navigate("MyRecipeList");
+            
+              navigation.reset({
+                index: 2, // 0-based index, 세 번째 화면(MyRecipeList)이 맨 위가 됨
+                routes: [
+                  { name: "Home" },       // 0번째
+                  { name: "Profile" },  // 1번째
+                  { name: "MyRecipeList" } // 2번째 (현재 화면)
+                ],
+              });
             } else {
               Alert.alert("수정 실패", "서버 오류가 발생했습니다.");
-            }
+            }                       
           },
         },
       ]);
