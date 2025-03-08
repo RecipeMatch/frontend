@@ -18,6 +18,7 @@ import RecipeDetail from "./src/screens/RecipeDetail";
 import { LogBox } from "react-native";
 import RecipeEdit1 from "./src/screens/RecipeEdit1";
 import RecipeEdit2 from "./src/screens/RecipeEdit2";
+import AllRecipesScreen from "./src/screens/AllRecipesScreen";
 
 if (__DEV__) {
   LogBox.ignoreLogs([
@@ -43,6 +44,7 @@ function NavigationProvider() {
         <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: true, title: "레시피 상세" }} /> 
         <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ title: "레시피 수정 (1/2)" }} />
         <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ title: "레시피 수정 (2/2)" }} />
+        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ title: "모든 레시피" }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
