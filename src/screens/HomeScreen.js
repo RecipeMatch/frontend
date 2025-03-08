@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomTab from "../../components/BottomTab";
 
-
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [searchText, setSearchText] = useState("");
@@ -78,7 +77,7 @@ const HomeScreen = () => {
           )}
           ListFooterComponent={
             <>
-              {/* 🛒 상품 추천 */}
+              {/* 🛒 추천 상품 */}
               <Text style={styles.sectionTitle}>추천 상품</Text>
               <FlatList
                 data={recommendedProducts}
@@ -92,6 +91,14 @@ const HomeScreen = () => {
                 )}
                 showsHorizontalScrollIndicator={false}
               />
+
+              {/* 🛒 모든 레시피 보기 버튼 (하단) */}
+              <TouchableOpacity 
+                style={styles.allRecipesButton} 
+                onPress={() => navigation.navigate("AllRecipesScreen")}
+              >
+                <Text style={styles.allRecipesButtonText}>모든 레시피 보기</Text>
+              </TouchableOpacity>
 
               {/* 하단 여백 추가 */}
               <View style={{ height: 80 }} />
@@ -138,21 +145,20 @@ const styles = StyleSheet.create({
   productText: { fontSize: 15, fontWeight: "bold" },
   productPrice: { fontSize: 13, color: "gray" },
 
-  /* 🔻 네비게이션 바 스타일 */
-  bottomTab: { 
-    flexDirection: "row", 
-    justifyContent: "space-around", 
-    alignItems: "center", 
-    height: 60, 
-    backgroundColor: "#fff", 
-    elevation: 10, 
-    position: "absolute", 
-    bottom: 0, 
-    left: 0, 
-    right: 0, 
-    paddingVertical: 10 
-  },
-  tabButton: { alignItems: "center" },
+ /* 🛒 모든 레시피 보기 버튼 스타일 */
+allRecipesButton: { 
+  marginVertical: 20,
+  backgroundColor: "#FFF5E1",  // 🔹 기존 빨강(#FF6347) → 연한 베이지(#FFF5E1)로 변경
+  padding: 15, 
+  borderRadius: 10, 
+  alignItems: "center",
+},
+allRecipesButtonText: { 
+  color: "#000",  // 🔹 기존 흰색(#fff) → 검정(#000)으로 변경
+  fontSize: 16, 
+  fontWeight: "bold" 
+},
+
 });
 
 export default HomeScreen;
