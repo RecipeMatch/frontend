@@ -40,9 +40,9 @@ function NavigationProvider() {
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MyRecipeList" component={Myrecipe} options={{ headerShown: false }} />
-        <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: true, title: "레시피 상세" }} /> 
-        <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ title: "레시피 수정 (1/2)" }} />
-        <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ title: "레시피 수정 (2/2)" }} />
+        <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: false }} /> 
+        <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ headerShown: false }} />
+        <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

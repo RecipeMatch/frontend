@@ -35,7 +35,6 @@ const UploadScreen = () => {
     setCookingDuration,
   } = useContext(UploadContext);
 
-  // 로컬 state로 슬라이더 값만 관리 (부모 re-render와 분리)
   const [localDuration, setLocalDuration] = useState(cookingDuration);
 
   const handleValueChange = useCallback((value) => {
@@ -51,7 +50,6 @@ const UploadScreen = () => {
     navigation.navigate("UploadScreen2");
   }, [navigation]);
 
-  // Firebase Auth: 사용자 이메일 가져오기
   const [userUid, setUserUid] = useState(null);
   useEffect(() => {
     const auth = getAuth();
@@ -75,15 +73,19 @@ const UploadScreen = () => {
     }
   };
 
-  const backAction = useCallback(() => {
-    navigation.navigate("Home");
-    return true;
-  }, [navigation]);
-
   useEffect(() => {
+    const backAction = () => {
+        if (navigation.canGoBack()) {
+            navigation.goBack(); 
+        } else {
+            navigation.navigate("Home");
+        }
+        return true;
+    };
+
     const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
     return () => backHandler.remove();
-  }, [backAction]);
+}, [navigation]);
 
   const categoryOptions = [
     { label: "한식", value: "KOREAN" },
@@ -139,23 +141,18 @@ const UploadScreen = () => {
           minimumValue={5}
           maximumValue={180}
           step={5}
-          // 슬라이더 전체 스타일
           style={styles.slider}
-          // 채워진 트랙(왼쪽 부분) 스타일
           minimumTrackTintColor="#1FCC79"
-          // 남은 트랙(오른쪽 부분) 스타일
           maximumTrackTintColor="#ccc"
-          // 슬라이더 막대(트랙) 자체의 두께 설정
           trackStyle={{
-            height: 4,           // 원하는 두께로 변경
+            height: 4,
             backgroundColor: "#ccc",
           }}
-          // 슬라이더 손잡이(thumb) 스타일
           thumbStyle={{
-            height: 24,          // thumb 높이
-            width: 24,           // thumb 너비
+            height: 24,
+            width: 24,
             backgroundColor: "#1FCC79",
-            borderRadius: 12,    // 동그랗게 만들기
+            borderRadius: 12,
             borderWidth: 2,
             borderColor: "#fff",
           }}

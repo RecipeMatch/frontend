@@ -145,9 +145,6 @@ const editRecipe = (recipe) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>나의 레시피</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← 뒤로가기</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
