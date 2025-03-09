@@ -18,6 +18,7 @@ import RecipeDetail from "./src/screens/RecipeDetail";
 import { LogBox } from "react-native";
 import RecipeEdit1 from "./src/screens/RecipeEdit1";
 import RecipeEdit2 from "./src/screens/RecipeEdit2";
+import AllRecipesScreen from "./src/screens/AllRecipesScreen";
 
 if (__DEV__) {
   LogBox.ignoreLogs([
@@ -43,6 +44,7 @@ function NavigationProvider() {
         <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: false }} /> 
         <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ headerShown: false }} />
         <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ headerShown: false }} />
+        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

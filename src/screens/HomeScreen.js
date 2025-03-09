@@ -92,6 +92,14 @@ const HomeScreen = () => {
                 )}
                 showsHorizontalScrollIndicator={false}
               />
+              
+              {/* 🛒 모든 레시피 보기 버튼 (하단) */}
+              <TouchableOpacity 
+                style={styles.allRecipesButton} 
+                onPress={() => navigation.navigate("AllRecipesScreen")}
+              >
+                <Text style={styles.allRecipesButtonText}>모든 레시피 보기</Text>
+              </TouchableOpacity>
 
               {/* 하단 여백 추가 */}
               <View style={{ height: 80 }} />
