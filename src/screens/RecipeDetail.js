@@ -1,206 +1,185 @@
-import React, { useState, useContext } from "react";
-import { 
-  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert 
+import React, { useState, useContext, useEffect } from "react";
+import {
+  View, Text, StyleSheet, Image, TouchableOpacity,
+  FlatList, TextInput, Alert
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
 import { AuthContext } from "../context/AuthContext";
 
 const RecipeDetail = ({ route }) => {
+  const navigation = useNavigation();
   const { recipe } = route.params;
   const { userInfo } = useContext(AuthContext);
 
   if (!userInfo?.uid) {
-    Alert.alert("로그인이 필요합니다.", "좋아요 및 즐겨찾기 기능을 사용하려면 로그인해주세요.");
+    Alert.alert("로그인이 필요합니다.", "댓글 기능을 사용하려면 로그인해주세요.");
     return null;
   }
 
-  // 업로드된 이미지가 있으면 그 URL 사용, 없으면 카테고리별 기본 이미지 사용
-  const uploadedImageUrl = (recipe.urls && recipe.urls.length > 0) ? recipe.urls[0] : null;
-  const finalImageUrl = uploadedImageUrl ?? getDefaultImageUrl(recipe.category);
-
-  // 좋아요 및 즐겨찾기 상태 관리
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [loading, setLoading] = useState(false);
   const [isLiked, setIsLiked] = useState(recipe.recipeLike ?? false);
   const [likeCount, setLikeCount] = useState(recipe.likeSize ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(recipe.recipeBookMark ?? false);
   const [bookmarkCount, setBookmarkCount] = useState(recipe.bookMarkSize ?? 0);
 
-  // 좋아요 토글 API 호출
+  useEffect(() => { 
+    fetchComments(); 
+  }, []);
+
+  const fetchComments = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/recipes/${recipe.id}/comments`);
+      setComments(await res.json());
+    } catch (e) {
+      console.error("댓글 조회 오류:", e);
+    }
+    setLoading(false);
+  };
+
+  const addComment = async () => {
+    if (!commentText.trim()) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/recipes/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId: recipe.id, content: commentText, userUid: userInfo.uid }),
+      });
+      setCommentText("");
+      fetchComments();
+    } catch (e) {
+      console.error("댓글 작성 오류:", e);
+      Alert.alert("오류", "댓글 작성 실패");
+    }
+  };
+
   const toggleLike = async () => {
     try {
-      console.log(`📡 [좋아요 요청] recipeId: ${recipe.id}, userUid: ${userInfo.uid}`);
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/recipe/like?recipeId=${recipe.id}&userUid=${userInfo.uid}`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
-      );
-
-      if (!response.ok) throw new Error("좋아요 업데이트 실패");
-
-      setIsLiked(prev => !prev);
-      setLikeCount(prev => (isLiked ? prev - 1 : prev + 1));
-
-      console.log("✅ [좋아요 업데이트 성공]");
-    } catch (error) {
-      console.error("🔥 [좋아요 오류]:", error);
-      Alert.alert("오류", "좋아요 변경 중 문제가 발생했습니다.");
+      const res = await fetch(`${API_BASE_URL}/api/recipe/like?recipeId=${recipe.id}&userUid=${userInfo.uid}`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      const newLiked = !isLiked;
+      const newCount = newLiked ? likeCount + 1 : likeCount - 1;
+      setIsLiked(newLiked);
+      setLikeCount(newCount);
+      // 업데이트된 값을 내비게이션 파라미터에도 반영
+      navigation.setParams({
+        recipe: { ...route.params.recipe, recipeLike: newLiked, likeSize: newCount }
+      });
+    } catch {
+      Alert.alert("오류", "좋아요 변경 실패");
     }
   };
 
-  // 즐겨찾기 토글 API 호출
   const toggleBookmark = async () => {
     try {
-      console.log(`📡 [즐겨찾기 요청] recipeId: ${recipe.id}, userUid: ${userInfo.uid}`);
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/recipe/bookmark?recipeId=${recipe.id}&userUid=${userInfo.uid}`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
-      );
-
-      if (!response.ok) throw new Error("즐겨찾기 업데이트 실패");
-
-      setIsBookmarked(prev => !prev);
-      setBookmarkCount(prev => (isBookmarked ? prev - 1 : prev + 1));
-
-      console.log("✅ [즐겨찾기 업데이트 성공]");
-    } catch (error) {
-      console.error("🔥 [즐겨찾기 오류]:", error);
-      Alert.alert("오류", "즐겨찾기 변경 중 문제가 발생했습니다.");
+      const res = await fetch(`${API_BASE_URL}/api/recipe/bookmark?recipeId=${recipe.id}&userUid=${userInfo.uid}`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      const newBookmarked = !isBookmarked;
+      const newCount = newBookmarked ? bookmarkCount + 1 : bookmarkCount - 1;
+      setIsBookmarked(newBookmarked);
+      setBookmarkCount(newCount);
+      navigation.setParams({
+        recipe: { ...route.params.recipe, recipeBookMark: newBookmarked, bookMarkSize: newCount }
+      });
+    } catch {
+      Alert.alert("오류", "즐겨찾기 변경 실패");
     }
   };
 
-  return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-    >
+  const finalImageUrl = recipe.urls?.[0] ?? getDefaultImageUrl(recipe.category);
+
+  const Header = () => (
+    <View style={styles.headerContainer}>
       <Text style={styles.title}>{recipe.recipeName}</Text>
-
-      {/* 이미지 */}
-      <Image 
-        source={{ uri: finalImageUrl }}
-        style={styles.recipeImage}
-        resizeMode="cover"
-      />
-
-      {/* 좋아요 & 즐겨찾기 버튼 */}
+      <Image source={{ uri: finalImageUrl }} style={styles.recipeImage} />
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={toggleLike}>
+        <TouchableOpacity onPress={toggleLike} style={styles.actionButton}>
           <Ionicons name={isLiked ? "heart" : "heart-outline"} size={24} color="red" />
           <Text style={styles.actionText}>{likeCount}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={toggleBookmark}>
+        <TouchableOpacity onPress={toggleBookmark} style={styles.actionButton}>
           <Ionicons name={isBookmarked ? "bookmark" : "bookmark-outline"} size={24} color="#ff8c00" />
           <Text style={styles.actionText}>{bookmarkCount}</Text>
         </TouchableOpacity>
       </View>
-
-      {/* 간단한 설명 */}
       <Text style={styles.description}>{recipe.description}</Text>
-
       <Text style={styles.sectionTitle}>⏳ 요리 시간</Text>
       <Text style={styles.info}>{recipe.cookingTime}분</Text>
-
       <Text style={styles.sectionTitle}>📌 카테고리</Text>
       <Text style={styles.info}>{recipe.category}</Text>
-
-      {/* 난이도 섹션 추가 */}
       <Text style={styles.sectionTitle}>🔥 난이도</Text>
-      <Text style={styles.info}>
-        {recipe.difficulty ? recipe.difficulty : "정보 없음"}
-      </Text>
-
+      <Text style={styles.info}>{recipe.difficulty || "정보 없음"}</Text>
       <Text style={styles.sectionTitle}>🥕 재료</Text>
-      <View style={styles.listContainer}>
-        {recipe.recipeIngredientDtos.map((item, index) => (
-          <Text key={index} style={styles.listItem}>
-            • {item.ingredientName}
-          </Text>
-        ))}
-      </View>
+      {recipe.recipeIngredientDtos.map((i, idx) => (
+        <Text key={idx} style={styles.listItem}>• {i.ingredientName}</Text>
+      ))}
+      <Text style={styles.sectionTitle}>🔪 도구</Text>
+      {recipe.toolName.map((t, idx) => (
+        <Text key={idx} style={styles.listItem}>• {t}</Text>
+      ))}
+      <Text style={styles.sectionTitle}>🍳 순서</Text>
+      {recipe.recipeStepDtos.map((s, idx) => (
+        <Text key={idx} style={styles.listItem}>
+          {s.stepOrder}. {s.content || "설명 없음"}
+        </Text>
+      ))}
+      <Text style={styles.sectionTitle}>💬 댓글</Text>
+    </View>
+  );
 
-      <Text style={styles.sectionTitle}>🔪 사용 도구</Text>
-      <View style={styles.listContainer}>
-        {recipe.toolName.map((tool, index) => (
-          <Text key={index} style={styles.listItem}>
-            • {tool}
-          </Text>
-        ))}
-      </View>
+  const renderComment = ({ item }) => (
+    <View style={styles.commentItem}>
+      <Text style={styles.commentAuthor}>{item.nickname}</Text>
+      <Text>{item.content}</Text>
+    </View>
+  );
 
-      <Text style={styles.sectionTitle}>🍳 요리 순서</Text>
-      <View style={styles.listContainer}>
-        {recipe.recipeStepDtos.map((step, index) => (
-          <Text key={index} style={styles.listItem}>
-            {step.stepOrder}. {step.content || "설명이 없습니다."}
-          </Text>
-        ))}
-      </View>
-    </ScrollView>
+  return (
+    <FlatList
+      data={comments}
+      keyExtractor={(item) => item.id.toString()}
+      ListHeaderComponent={<Header />}
+      renderItem={renderComment}
+      ListEmptyComponent={loading ? null : <Text style={styles.emptyText}>등록된 댓글이 없습니다.</Text>}      ListFooterComponent={
+        <View style={styles.commentInputContainer}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="댓글을 입력하세요"
+            value={commentText}
+            onChangeText={setCommentText}
+          />
+          <TouchableOpacity onPress={addComment}>
+            <Ionicons name="send" size={24} />
+          </TouchableOpacity>
+        </View>
+      }
+      contentContainerStyle={styles.container}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#fff" 
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  title: { 
-    fontSize: 24, 
-    fontWeight: "bold", 
-    marginBottom: 10 
-  },
-  recipeImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 10,
-    backgroundColor: "#eee",
-    marginBottom: 15,
-  },
-  description: { 
-    fontSize: 16, 
-    color: "#666", 
-    marginBottom: 15 
-  },
-  actionsContainer: { 
-    flexDirection: "row", 
-    justifyContent: "center", 
-    marginVertical: 10 
-  },
-  actionButton: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    marginHorizontal: 15 
-  },
-  actionText: { 
-    fontSize: 16, 
-    marginLeft: 5, 
-    color: "#444" 
-  },
-  sectionTitle: { 
-    fontSize: 18, 
-    fontWeight: "bold", 
-    marginTop: 15, 
-    marginBottom: 5 
-  },
-  info: { 
-    fontSize: 16, 
-    color: "#333" 
-  },
-  listContainer: {
-    marginBottom: 10,
-  },
-  listItem: { 
-    fontSize: 16, 
-    paddingVertical: 3, 
-    color: "#444" 
-  },
+  container: { padding: 16, backgroundColor: "#fff" },
+  headerContainer: { marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: "bold" },
+  recipeImage: { width: "100%", height: 200, borderRadius: 10, marginVertical: 12 },
+  actionsContainer: { flexDirection: "row", justifyContent: "center", marginBottom: 12 },
+  actionButton: { flexDirection: "row", alignItems: "center", marginHorizontal: 15 },
+  actionText: { marginLeft: 5, fontSize: 16 },
+  description: { fontSize: 16, color: "#666", marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", marginTop: 12 },
+  info: { fontSize: 16, marginBottom: 8 },
+  listItem: { fontSize: 16, paddingVertical: 2 },
+  commentItem: { borderBottomWidth: 0.5, borderColor: "#ccc", paddingVertical: 8 },
+  commentAuthor: { fontWeight: "bold" },
+  emptyText: { textAlign: "center", color: "#666", marginVertical: 12 },
+  commentInputContainer: { flexDirection: "row", alignItems: "center", borderTopWidth: 1, borderColor: "#eee", paddingVertical: 12 },
+  commentInput: { flex: 1, height: 40, borderWidth: 1, borderColor: "#ddd", borderRadius: 20, paddingHorizontal: 12, marginRight: 8 },
 });
 
 export default RecipeDetail;
