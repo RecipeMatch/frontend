@@ -146,6 +146,21 @@ const styles = StyleSheet.create({
   productText: { fontSize: 15, fontWeight: "bold" },
   productPrice: { fontSize: 13, color: "gray" },
 
+  /* 모든 레시피 보기 버튼 */
+  allRecipesButton: {
+    backgroundColor: "#F3F3F3",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  allRecipesButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  
   /* 🔻 네비게이션 바 스타일 */
   bottomTab: { 
     flexDirection: "row", 

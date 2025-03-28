@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
 import { Ionicons } from "@expo/vector-icons"; // ✅ 아이콘 추가
+import { StatusBar, Platform } from "react-native";
 
 const AllRecipesScreen = () => {
   const [recipes, setRecipes] = useState([]);
@@ -75,7 +76,12 @@ const AllRecipesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    padding: 10,
+    backgroundColor: "#fff",
+  },
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 10, paddingLeft: 10 },
   listContainer: { paddingBottom: 20 },
   row: { justifyContent: "space-between" }, // ✅ 두 개씩 정렬
