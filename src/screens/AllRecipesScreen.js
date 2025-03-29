@@ -43,12 +43,12 @@ const AllRecipesScreen = () => {
         {/* ✅ 즐겨찾기 & 좋아요 개수 추가 */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Ionicons name="bookmark-outline" size={16} color="#ff8c00" />
-            <Text style={styles.statText}>{item.bookMarkSize}</Text>
-          </View>
-          <View style={styles.statItem}>
             <Ionicons name="heart-outline" size={16} color="red" />
             <Text style={styles.statText}>{item.likeSize}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="bookmark-outline" size={16} color="#ff8c00" />
+            <Text style={styles.statText}>{item.bookMarkSize}</Text>
           </View>
         </View>
       </TouchableOpacity>

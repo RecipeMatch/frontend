@@ -5,6 +5,36 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../context/AuthContext";
 import BottomTab from "../components/BottomTab";
 
+const ALLERGY_OPTIONS = [
+  { label: "게", value: "CRAB" },
+  { label: "고등어", value: "MACKEREL" },
+  { label: "닭고기", value: "CHICKEN" },
+  { label: "돼지고기", value: "PORK" },
+  { label: "땅콩", value: "PEANUT" },
+  { label: "메밀", value: "MEMIL" },
+  { label: "밀", value: "WHEAT" },
+  { label: "복숭아", value: "PEACH" },
+  { label: "새우", value: "SHRIMP" },
+  { label: "쇠고기", value: "BEEF" },
+  { label: "아황산류", value: "SULFITE" },
+  { label: "알류", value: "EGG" },
+  { label: "오징어", value: "SQUID" },
+  { label: "우유", value: "MILK" },
+  { label: "잣", value: "PINENUT" },
+  { label: "조개류", value: "SHELLFISH" },
+  { label: "토마토", value: "TOMATO" },
+  { label: "대두", value: "SOY" },
+  { label: "호두", value: "WALNUT" },
+];
+
+function getAllergyLabels(allergyArray) {
+  if (!allergyArray) return [];
+  return allergyArray.map((code) => {
+    const foundOption = ALLERGY_OPTIONS.find((opt) => opt.value === code);
+    return foundOption ? foundOption.label : code;
+  });
+}
+
 export default function ProfileScreen() {
   const { userInfo, logout } = useContext(AuthContext);
   const navigation = useNavigation();
@@ -27,6 +57,8 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const allergyLabels = getAllergyLabels(userInfo?.allergyNames);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>내 프로필</Text>
@@ -34,13 +66,21 @@ export default function ProfileScreen() {
       {/* 닉네임 */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>👤 닉네임</Text>
-        <TextInput style={styles.input} value={userInfo?.nickname || "닉네임 없음"} editable={false} />
+        <TextInput 
+          style={styles.input} 
+          value={userInfo?.nickname || "닉네임 없음"} 
+          editable={false} 
+        />
       </View>
 
       {/* 전화번호 */}
       <View style={styles.infoContainer}>
         <Text style={styles.label}>📞 전화번호</Text>
-        <TextInput style={styles.input} value={userInfo?.phoneNumber || "전화번호 없음"} editable={false} />
+        <TextInput 
+          style={styles.input} 
+          value={userInfo?.phoneNumber || "전화번호 없음"} 
+          editable={false} 
+        />
       </View>
 
       {/* 알레르기 음식 */}
@@ -48,7 +88,8 @@ export default function ProfileScreen() {
         <Text style={styles.label}>🥜 알레르기 음식</Text>
         <TextInput
           style={styles.input}
-          value={userInfo?.allergyNames?.join(", ") || "정보 없음"}
+          // 한글 라벨 배열이 존재하면 join(", ")으로 연결, 없으면 "정보 없음"
+          value={allergyLabels.length > 0 ? allergyLabels.join(", ") : "정보 없음"}
           editable={false}
         />
       </View>
