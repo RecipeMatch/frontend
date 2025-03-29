@@ -51,7 +51,7 @@ const ProfileEditScreen = () => {
   const [allergyNames, setAllergyNames] = useState(userInfo?.allergyNames || []);
   const [toolNames, setToolNames] = useState(userInfo?.toolNames || []);
   const [ingredientNames, setIngredientNames] = useState(userInfo?.ingredientNames || []);
-  const [selectedAllergy, setSelectedAllergy] = useState(null);
+  const [pickerKey, setPickerKey] = useState(0);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -132,16 +132,17 @@ const ProfileEditScreen = () => {
           <Text style={styles.label}> 알레르기 음식</Text>
           <View style={styles.pickerContainer}>
             <Picker
-              selectedValue={selectedAllergy}
+              key={pickerKey} // key가 변경되면 Picker가 새로 마운트됨
+              selectedValue={""} // 항상 빈 문자열을 선택값으로 고정
               onValueChange={(value) => {
-                if (value !== null) {
+                if (value !== "") {
                   setAllergyNames((prev) => [...prev, value]);
-                  // 3) 선택 후 다시 null로 돌려 placeholder가 뜨도록
-                  setSelectedAllergy(null);
+                  // Picker를 재렌더링하기 위해 key 값을 변경합니다.
+                  setPickerKey((prevKey) => prevKey + 1);
                 }
               }}
             >
-              <Picker.Item label="알레르기를 선택하세요" value={null} />
+              <Picker.Item label="알레르기를 선택하세요" value="" />
               {ALLERGY_OPTIONS.map((option) => (
                 <Picker.Item key={option.value} label={option.label} value={option.value} />
               ))}
