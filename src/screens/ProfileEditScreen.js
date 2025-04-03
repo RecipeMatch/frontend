@@ -204,7 +204,12 @@ const ProfileEditScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
+  container: {
+    flex: 1,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    padding: 10,
+    backgroundColor: "#fff",
+  },  
   scrollContainer: { flexGrow: 1, paddingBottom: 180 },
   label: { fontSize: 18, fontWeight: "bold", marginTop: 20 },
   input: {

@@ -21,8 +21,6 @@ import RNFetchBlob from 'react-native-blob-util';
 
 const UploadScreen2 = () => {
   const navigation = useNavigation();
-
-  // UploadContext에서 값 가져오기
   const {
     ingredients, setIngredients,
     equipment, setEquipment,
@@ -32,6 +30,9 @@ const UploadScreen2 = () => {
 
   const [userUid, setUserUid] = useState(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  // 추가된 state: 서버로부터 받은 알레르기 정보와 대체 도구 정보
+  const [allergyInfo, setAllergyInfo] = useState(null);
+  const [alternativeToolInfo, setAlternativeToolInfo] = useState(null);
 
   // 로그인 사용자 UID(이메일) 가져오기
   useEffect(() => {
@@ -160,7 +161,7 @@ const UploadScreen2 = () => {
         name: 'files',
         filename: 'upload.jpg',
         type: 'image/jpeg',
-        data: RNFetchBlob.wrap(image)  // image는 로컬 파일 URI여야 합니다.
+        data: RNFetchBlob.wrap(image)
       });
     }
     
@@ -172,28 +173,31 @@ const UploadScreen2 = () => {
         data
       );
     
-      console.log("res.info():", res.info ? res.info() : null);
-      console.log("res.respInfo:", res.respInfo);
-    
       let statusCode;
     
-      // 원래라면 res.info().status 또는 res.respInfo.status 에 상태 코드가 있어야 하지만
-      // 현재는 {"rnfbEncode":"utf8"}만 있어서 상태 코드를 가져오지 못함
       if (res.respInfo && res.respInfo.status) {
         statusCode = res.respInfo.status;
       } else if (res.info && res.info().status) {
         statusCode = res.info().status;
       }
-    
-      // ★ 만약 둘 다 없으면 임시로 200으로 간주
       if (!statusCode) {
         statusCode = 200;
       }
     
-      console.log("✅ 서버 응답 코드:", statusCode);
-    
       const responseText = await res.text();
       console.log("✅ 서버 응답 내용:", responseText);
+      
+      // 서버가 JSON 형식으로 알레르기 및 대체 도구 정보를 반환한다고 가정
+      let responseJSON = {};
+      try {
+        responseJSON = JSON.parse(responseText);
+      } catch (err) {
+        console.error("응답 파싱 실패:", err);
+      }
+      
+      // 알레르기 정보와 대체 도구 정보를 state에 저장
+      setAllergyInfo(responseJSON.allergyInfo || null);
+      setAlternativeToolInfo(responseJSON.alternativeToolInfo || null);
     
       // 2xx 범위면 성공 처리
       if (statusCode >= 200 && statusCode < 300) {
@@ -206,30 +210,27 @@ const UploadScreen2 = () => {
       Alert.alert("네트워크 오류", `서버에 연결할 수 없습니다.\n오류: ${error.message}`);
     }    
   };
+
   const onUploadSuccess = () => {
     resetUpload();
     setSuccessModalVisible(false);
-
     navigation.reset({
         index: 0,
-        routes: [{ name: "Home" }], // 스택을 초기화하고 홈 화면만 남김
+        routes: [{ name: "Home" }],
     });
   };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === "ios" ? "padding" : "height"} 
       style={styles.container}
     >
       <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
-
-      {/* 페이지 표시 */}
       <View style={styles.pageIndicator}>
         <Text style={styles.pageIndicatorText}>2/2</Text>
       </View>
-
-      {/* 스크롤 가능한 영역 */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* 🥕 재료 입력 */}
+        {/* 재료 입력 */}
         <Text style={styles.label}>재료</Text>
         {ingredients.map((ingredient, index) => (
           <View key={index} style={styles.inputRow}>
@@ -256,7 +257,7 @@ const UploadScreen2 = () => {
           <Text style={styles.addButtonText}>재료 추가</Text>
         </TouchableOpacity>
 
-        {/* 🔪 도구 입력 */}
+        {/* 도구 입력 */}
         <Text style={styles.label}>도구</Text>
         {equipment.map((item, index) => (
           <View key={index} style={styles.inputRow}>
@@ -283,7 +284,7 @@ const UploadScreen2 = () => {
           <Text style={styles.addButtonText}>도구 추가</Text>
         </TouchableOpacity>
 
-        {/* 🍳 요리 순서 입력 */}
+        {/* 요리 순서 입력 */}
         <Text style={styles.label}>요리 순서</Text>
         {safeSteps.map((step, index) => (
           <View key={index} style={styles.inputRow}>
@@ -310,6 +311,25 @@ const UploadScreen2 = () => {
           <Ionicons name="add-outline" size={20} color="#1FCC79" />
           <Text style={styles.addButtonText}>순서 추가</Text>
         </TouchableOpacity>
+
+        {/* 추가된 알레르기 및 대체 도구 정보 표시 영역 */}
+        { (allergyInfo || alternativeToolInfo) && (
+          <View style={styles.infoContainer}>
+            {allergyInfo && (
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>알레르기 정보</Text>
+                <Text style={styles.infoText}>{allergyInfo}</Text>
+              </View>
+            )}
+            {alternativeToolInfo && (
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>대체 도구 정보</Text>
+                <Text style={styles.infoText}>{alternativeToolInfo}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
       </ScrollView>
 
       {/* 하단 네비게이션 영역 */}
@@ -317,12 +337,9 @@ const UploadScreen2 = () => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>뒤로가기</Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.nextButton} onPress={uploadRecipe}>
           <Text style={styles.nextButtonText}>업로드</Text>
         </TouchableOpacity>
-
-        {/* 업로드 성공 모달 */}
         <SuccessModal
             visible={successModalVisible}
             onClose={onUploadSuccess}
@@ -341,7 +358,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: { 
     flexGrow: 1, 
-    paddingBottom: 100, 
+    paddingBottom: 150, 
     justifyContent: "flex-start" 
   },
   pageIndicator: { 
@@ -411,10 +428,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5", 
     paddingVertical: 14, 
     borderRadius: 12, 
-    shadowColor: "#000", 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 4, 
     elevation: 3, 
     alignItems: "center"
   },
@@ -428,63 +441,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#1FCC79", 
     paddingVertical: 14, 
     borderRadius: 12, 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.15, 
-    shadowRadius: 4, 
     elevation: 4, 
     alignItems: "center"
   },
   nextButtonText: { 
     fontSize: 18, 
     color: "#fff", 
-    fontWeight: "700", 
-    letterSpacing: 0.5 
+    fontWeight: "700"
   },
-  modalContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    backgroundColor: "rgba(0,0,0,0.5)", 
-    width: "100%", 
-    height: "100%", 
-    position: "absolute", 
-    top: 0, 
-    left: 0 
+  infoContainer: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#EFEFEF",
+    borderRadius: 10,
   },
-  modalContent: { 
-    backgroundColor: "#fff", 
-    padding: 30, 
-    borderRadius: 20, 
-    alignItems: "center", 
-    width: "80%",
-    maxWidth: 350 
+  infoBox: {
+    marginBottom: 10,
   },
-  modalEmoji: { 
-    fontSize: 50 
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
   },
-  modalTitle: { 
-    fontSize: 22, 
-    fontWeight: "bold", 
-    marginVertical: 10 
-  },
-  modalText: { 
-    fontSize: 16, 
-    textAlign: "center", 
-    marginBottom: 20 
-  },
-  modalButton: { 
-    backgroundColor: "#1FCC79",
-    paddingVertical: 14, 
-    paddingHorizontal: 40, 
-    borderRadius: 10, 
-    width: 200, 
-    alignItems: "center" 
-  },
-  modalButtonText: { 
-    fontSize: 18, 
-    color: "#fff", 
-    fontWeight: "bold" 
+  infoText: {
+    fontSize: 14,
+    color: "#555",
   },
 });
 
