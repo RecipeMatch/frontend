@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
 import { AuthContext } from "../context/AuthContext";
+import { StatusBar, Platform } from "react-native";
 
 const RecipeDetail = ({ route }) => {
   const navigation = useNavigation();
@@ -66,7 +67,6 @@ const RecipeDetail = ({ route }) => {
       const newCount = newLiked ? likeCount + 1 : likeCount - 1;
       setIsLiked(newLiked);
       setLikeCount(newCount);
-      // 업데이트된 값을 내비게이션 파라미터에도 반영
       navigation.setParams({
         recipe: { ...route.params.recipe, recipeLike: newLiked, likeSize: newCount }
       });
@@ -114,14 +114,35 @@ const RecipeDetail = ({ route }) => {
       <Text style={styles.info}>{recipe.category}</Text>
       <Text style={styles.sectionTitle}>🔥 난이도</Text>
       <Text style={styles.info}>{recipe.difficulty || "정보 없음"}</Text>
+      
+      {/* 재료 및 알레르기 재료 */}
       <Text style={styles.sectionTitle}>🥕 재료</Text>
       {recipe.recipeIngredientDtos.map((i, idx) => (
         <Text key={idx} style={styles.listItem}>• {i.ingredientName}</Text>
       ))}
+      {recipe.allergyIngredients && recipe.allergyIngredients.length > 0 && (
+        <>
+          <Text style={styles.subSectionTitle}>⚠️ 알레르기 유발 재료</Text>
+          {recipe.allergyIngredients.map((a, idx) => (
+            <Text key={idx} style={styles.listItem}>• {a}</Text>
+          ))}
+        </>
+      )}
+      
+      {/* 도구 및 대체 도구 */}
       <Text style={styles.sectionTitle}>🔪 도구</Text>
       {recipe.toolName.map((t, idx) => (
         <Text key={idx} style={styles.listItem}>• {t}</Text>
       ))}
+      {recipe.alternativeTools && recipe.alternativeTools.length > 0 && (
+        <>
+          <Text style={styles.subSectionTitle}>🔄 대체 도구</Text>
+          {recipe.alternativeTools.map((tool, idx) => (
+            <Text key={idx} style={styles.listItem}>• {tool}</Text>
+          ))}
+        </>
+      )}
+      
       <Text style={styles.sectionTitle}>🍳 순서</Text>
       {recipe.recipeStepDtos.map((s, idx) => (
         <Text key={idx} style={styles.listItem}>
@@ -145,7 +166,8 @@ const RecipeDetail = ({ route }) => {
       keyExtractor={(item) => item.id.toString()}
       ListHeaderComponent={<Header />}
       renderItem={renderComment}
-      ListEmptyComponent={loading ? null : <Text style={styles.emptyText}>등록된 댓글이 없습니다.</Text>}      ListFooterComponent={
+      ListEmptyComponent={loading ? null : <Text style={styles.emptyText}>등록된 댓글이 없습니다.</Text>}
+      ListFooterComponent={
         <View style={styles.commentInputContainer}>
           <TextInput
             style={styles.commentInput}
@@ -164,7 +186,8 @@ const RecipeDetail = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#fff" },
+  container: { padding: 16, backgroundColor: "#fff", paddingTop: StatusBar.currentHeight || 20 
+  },
   headerContainer: { marginBottom: 16 },
   title: { fontSize: 24, fontWeight: "bold" },
   recipeImage: { width: "100%", height: 200, borderRadius: 10, marginVertical: 12 },
@@ -173,6 +196,7 @@ const styles = StyleSheet.create({
   actionText: { marginLeft: 5, fontSize: 16 },
   description: { fontSize: 16, color: "#666", marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", marginTop: 12 },
+  subSectionTitle: { fontSize: 16, fontWeight: "600", marginTop: 8, color: "#aa0000" },
   info: { fontSize: 16, marginBottom: 8 },
   listItem: { fontSize: 16, paddingVertical: 2 },
   commentItem: { borderBottomWidth: 0.5, borderColor: "#ccc", paddingVertical: 8 },
