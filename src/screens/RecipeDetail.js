@@ -1,14 +1,13 @@
 import React, { useState, useContext, useEffect } from "react";
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
-  FlatList, TextInput, Alert
+  FlatList, TextInput, Alert, StatusBar, Platform
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
 import { AuthContext } from "../context/AuthContext";
-import { StatusBar, Platform } from "react-native";
 
 const RecipeDetail = ({ route }) => {
   const navigation = useNavigation();
@@ -120,10 +119,10 @@ const RecipeDetail = ({ route }) => {
       {recipe.recipeIngredientDtos.map((i, idx) => (
         <Text key={idx} style={styles.listItem}>• {i.ingredientName}</Text>
       ))}
-      {recipe.allergyIngredients && recipe.allergyIngredients.length > 0 && (
+      {recipe.allergies && recipe.allergies.length > 0 && (
         <>
           <Text style={styles.subSectionTitle}>⚠️ 알레르기 유발 재료</Text>
-          {recipe.allergyIngredients.map((a, idx) => (
+          {recipe.allergies.map((a, idx) => (
             <Text key={idx} style={styles.listItem}>• {a}</Text>
           ))}
         </>
@@ -134,15 +133,14 @@ const RecipeDetail = ({ route }) => {
       {recipe.toolName.map((t, idx) => (
         <Text key={idx} style={styles.listItem}>• {t}</Text>
       ))}
-      {recipe.alternativeTools && recipe.alternativeTools.length > 0 && (
+
+      {recipe.alternativeTool && recipe.alternativeTool.trim() !== "" && (
         <>
           <Text style={styles.subSectionTitle}>🔄 대체 도구</Text>
-          {recipe.alternativeTools.map((tool, idx) => (
-            <Text key={idx} style={styles.listItem}>• {tool}</Text>
-          ))}
+          <Text style={styles.listItem}>• {recipe.alternativeTool}</Text>
         </>
       )}
-      
+            
       <Text style={styles.sectionTitle}>🍳 순서</Text>
       {recipe.recipeStepDtos.map((s, idx) => (
         <Text key={idx} style={styles.listItem}>
@@ -186,7 +184,10 @@ const RecipeDetail = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#fff", paddingTop: StatusBar.currentHeight || 20 
+  container: { 
+    padding: 16, 
+    backgroundColor: "#fff", 
+    paddingTop: StatusBar.currentHeight || 20 
   },
   headerContainer: { marginBottom: 16 },
   title: { fontSize: 24, fontWeight: "bold" },
