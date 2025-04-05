@@ -171,7 +171,10 @@ const SearchScreen = () => {
           const imageUrl = item.imageUrls?.[0] ?? "https://cdn-icons-png.flaticon.com/512/1404/1404945.png";
         
           return (
-            <TouchableOpacity style={styles.recipeCard}>
+            <TouchableOpacity
+              style={styles.recipeCard}
+              onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+            >
               <Image style={styles.recipeImage} source={{ uri: imageUrl }} resizeMode="cover" />
               <Text style={styles.recipeName} numberOfLines={1}>{item.recipeName}</Text>
         
@@ -191,6 +194,7 @@ const SearchScreen = () => {
             </TouchableOpacity>
           );
         }}
+        
         
         
         ListHeaderComponent={
