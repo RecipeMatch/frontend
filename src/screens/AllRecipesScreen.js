@@ -1,16 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
-import { Ionicons } from "@expo/vector-icons"; // ✅ 아이콘 추가
+import { Ionicons } from "@expo/vector-icons";
 import { StatusBar, Platform } from "react-native";
+import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
 
 const AllRecipesScreen = () => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [listKey, setListKey] = useState("grid"); // ✅ FlatList 재렌더링을 위한 key 추가
+  const [listKey, setListKey] = useState("grid");
+  const [sortBy, setSortBy] = useState(null);
   const navigation = useNavigation();
+  const { user } = useContext(AuthContext);
+  const userUid = user?.email;
 
   const fetchRecipes = async () => {
     try {
@@ -21,6 +26,30 @@ const AllRecipesScreen = () => {
       console.error("🔥 API 요청 중 오류 발생:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSort = async (type) => {
+    try {
+      setSortBy(type);
+      console.log("📤 정렬 기준:", type);
+
+      const allRes = await axios.get(`${API_BASE_URL}/api/recipeAll`);
+      const recipeIds = allRes.data.map((r) => r.id);
+
+      console.log("📦 보내는 recipeIds:", recipeIds);
+      console.log("📥 전체 레시피 수:", recipeIds.length);
+
+      const sortRes = await axios.post(`${API_BASE_URL}/api/recipe/sort`, {
+        recipeIds,
+        sortBy: type,
+      });
+
+      console.log("✅ 정렬된 결과 수:", sortRes.data.length);
+      setRecipes(sortRes.data);
+      setListKey(type); // FlatList 재렌더링을 위해 key 변경
+    } catch (err) {
+      console.error("❌ 정렬 요청 실패", err);
     }
   };
 
@@ -39,8 +68,6 @@ const AllRecipesScreen = () => {
       >
         <Image style={styles.recipeImage} source={{ uri: finalImageUrl }} resizeMode="cover" />
         <Text style={styles.recipeName} numberOfLines={1}>{item.recipeName}</Text>
-        
-        {/* ✅ 즐겨찾기 & 좋아요 개수 추가 */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Ionicons name="heart-outline" size={16} color="red" />
@@ -58,16 +85,34 @@ const AllRecipesScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>모든 레시피</Text>
+
+      {/* ✅ 정렬 버튼 */}
+      <View style={styles.sortContainer}>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === "LIKE" && styles.activeSort]}
+          onPress={() => handleSort("LIKE")}
+        >
+          <Text style={styles.sortText}>좋아요순</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === "BOOKMARK" && styles.activeSort]}
+          onPress={() => handleSort("BOOKMARK")}
+        >
+          <Text style={styles.sortText}>즐겨찾기순</Text>
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
         <ActivityIndicator size="large" color="#FF6347" />
       ) : (
         <FlatList
-          key={listKey} // ✅ FlatList 재렌더링을 강제하여 오류 해결
+          key={listKey}
           data={recipes}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item?.recipeId?.toString() ?? index.toString()}
+
           renderItem={renderRecipeItem}
-          numColumns={2} // ✅ 2열 그리드 적용
-          columnWrapperStyle={styles.row} // ✅ 2열 정렬 스타일 적용
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContainer}
         />
       )}
@@ -83,9 +128,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   title: { fontSize: 22, fontWeight: "bold", marginBottom: 10, paddingLeft: 10 },
+  sortContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
+    gap: 10,
+  },
+  sortButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#f1f1f1",
+    borderRadius: 20,
+  },
+  activeSort: {
+    backgroundColor: "#1FCC79",
+  },
+  sortText: {
+    fontWeight: "bold",
+    color: "#333",
+  },
   listContainer: { paddingBottom: 20 },
-  row: { justifyContent: "space-between" }, // ✅ 두 개씩 정렬
-
+  row: { justifyContent: "space-between" },
   recipeCard: {
     flex: 1,
     backgroundColor: "#fff",
@@ -101,8 +164,6 @@ const styles = StyleSheet.create({
   },
   recipeImage: { width: "100%", height: 120, backgroundColor: "#eee" },
   recipeName: { fontSize: 14, fontWeight: "bold", padding: 8, textAlign: "center" },
-
-  // ✅ 즐겨찾기 & 좋아요 스타일
   statsContainer: { flexDirection: "row", justifyContent: "center", paddingBottom: 8 },
   statItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 8 },
   statText: { fontSize: 14, marginLeft: 4, color: "#444" },
