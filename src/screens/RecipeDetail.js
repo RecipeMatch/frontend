@@ -10,6 +10,11 @@ import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
 import { AuthContext } from "../context/AuthContext";
 
 const RecipeDetail = ({ route }) => {
+
+  useEffect(() => {
+    console.log("🔍 RecipeDetail data:", recipe);
+  }, [recipe]);
+  
   const navigation = useNavigation();
   const { recipe } = route.params;
   const { userInfo } = useContext(AuthContext);
@@ -133,14 +138,13 @@ const RecipeDetail = ({ route }) => {
       {recipe.toolName.map((t, idx) => (
         <Text key={idx} style={styles.listItem}>• {t}</Text>
       ))}
-
-      {recipe.alternativeTool && recipe.alternativeTool.trim() !== "" && (
+      {recipe.alterTools && recipe.alterTools.trim() !== "" && (
         <>
           <Text style={styles.subSectionTitle}>🔄 대체 도구</Text>
-          <Text style={styles.listItem}>• {recipe.alternativeTool}</Text>
+          <Text style={styles.listItem}>• {recipe.alterTools}</Text>
         </>
       )}
-            
+      
       <Text style={styles.sectionTitle}>🍳 순서</Text>
       {recipe.recipeStepDtos.map((s, idx) => (
         <Text key={idx} style={styles.listItem}>

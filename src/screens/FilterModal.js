@@ -1,12 +1,12 @@
-// 📁 src/screens/FilterModal.js
-import React, { useState, useContext } from "react";
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from "react-native";
+
+// 📁 src/screens/FilterModal.js (선택 상태 유지 버전)
+import React, { useState, useContext, useEffect } from "react";
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import axios from "axios";
 import { API_BASE_URL } from "@env";
 import { AuthContext } from "../context/AuthContext";
 
 const OptionButton = ({ label, selected, onPress }) => (
-    console.log("안녕녕"),
   <TouchableOpacity
     style={[styles.optionButton, selected && styles.optionButtonSelected]}
     onPress={onPress}
@@ -18,60 +18,56 @@ const OptionButton = ({ label, selected, onPress }) => (
 const FilterModal = ({ visible, mode, onClose, onApply }) => {
   const { user } = useContext(AuthContext);
   const userUid = user?.email;
+
+  // 🧠 상태 유지: 모달 닫혀도 기억됨
   const [selectedSort, setSelectedSort] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
   const handleApply = async () => {
-    console.log("🔥 handleApply 호출됨");
     try {
+      const requestBody = {
+        userUid,
+        userInfo: true // 기본 필터 항상 포함
+      };
+
       if (mode === "sort") {
-        console.log("📤 정렬 실행중 - 선택된 값:", selectedSort);
-        if (!selectedSort) {
-          console.warn("⚠️ 정렬 기준이 선택되지 않았습니다.");
-          return;
-        }
-  
+        if (!selectedSort) return Alert.alert("정렬 기준을 선택하세요.");
         const allRes = await axios.get(`${API_BASE_URL}/api/recipeAll`);
-        const recipeIds = allRes.data.map((r) => r.recipeId); // ❗ 확인 필요: r.id일 수도
-        console.log("📦 보내는 recipeIds:", recipeIds);
-  
+        const recipeIds = allRes.data.map((r) => r.recipeId);
         const sortRes = await axios.post(`${API_BASE_URL}/api/recipe/sort`, {
           recipeIds,
           sortBy: selectedSort,
         });
-  
-        console.log("✅ 정렬 결과:", sortRes.data);
         onApply(sortRes.data);
+        onClose();
+        return;
       }
-  
-      else if (mode === "time") {
-        console.log("⏱ 요리시간 필터 실행중 - 선택된 값:", selectedTime);
-        if (!selectedTime) {
-          console.warn("⚠️ 요리시간이 선택되지 않았습니다.");
-          return;
-        }
-  
+
+      if (mode === "time") {
+        if (!selectedTime) return Alert.alert("요리 시간을 선택하세요.");
         let min = 0, max = 999;
         if (selectedTime === "30") [min, max] = [0, 30];
         if (selectedTime === "60") [min, max] = [30, 60];
         if (selectedTime === "90") [min, max] = [60, 90];
-        if (selectedTime === "999") [min, max] = [90, 999];
-  
-        const res = await axios.post(`${API_BASE_URL}/api/recipe/search`, {
-          userUid,
-          minTime: min,
-          maxTime: max,
-          userInfo: true,
-        });
-  
-        console.log("✅ 요리시간 결과:", res.data);
-        onApply(res.data);
+        if (selectedTime === "90+") [min, max] = [90, 999];
+        requestBody.minTime = min;
+        requestBody.maxTime = max;
       }
+
+      if (mode === "level") {
+        if (!selectedLevel) return Alert.alert("난이도를 선택하세요.");
+        requestBody.difficulty = selectedLevel;
+      }
+
+      const res = await axios.post(`${API_BASE_URL}/api/recipe/search`, requestBody);
+      onApply(res.data);
+      onClose();
     } catch (e) {
-      console.error("❌ 필터/정렬 실패:", e);
+      console.error("❌ 필터 적용 실패:", e);
+      Alert.alert("에러", "필터 적용 중 문제가 발생했습니다.");
     }
   };
-  
 
   const renderOptions = () => {
     if (mode === "sort") {
@@ -80,13 +76,12 @@ const FilterModal = ({ visible, mode, onClose, onApply }) => {
           key={type}
           label={type === "LIKE" ? "좋아요순" : "즐겨찾기순"}
           selected={selectedSort === type}
-          onPress={() => {
-            console.log("✅ 정렬 선택됨:", type);
-            setSelectedSort(type);
-          }}
+          onPress={() => setSelectedSort(type)}
         />
       ));
-    } else if (mode === "time") {
+    }
+
+    if (mode === "time") {
       return [
         { label: "30분 이하", value: "30" },
         { label: "30분 이상 ~ 60분 이하", value: "60" },
@@ -97,13 +92,34 @@ const FilterModal = ({ visible, mode, onClose, onApply }) => {
           key={option.value}
           label={option.label}
           selected={selectedTime === option.value}
-          onPress={() => {
-            console.log("✅ 요리시간 선택됨:", option.value);
-            setSelectedTime(option.value);
-          }}
+          onPress={() => setSelectedTime(option.value)}
         />
       ));
     }
+
+    if (mode === "level") {
+      return [
+        { label: "초보", value: "EASY" },
+        { label: "보통", value: "MIDDLE" },
+        { label: "어려움", value: "HARD" },
+      ].map((option) => (
+        <OptionButton
+          key={option.value}
+          label={option.label}
+          selected={selectedLevel === option.value}
+          onPress={() => setSelectedLevel(option.value)}
+        />
+      ));
+    }
+
+    if (mode === "userinfo") {
+      return (
+        <Text style={{ fontSize: 16, color: "#666", marginVertical: 10 }}>
+          내 보유 도구, 재료, 알러지 정보를 기반으로 필터링합니다.
+        </Text>
+      );
+    }
+
     return null;
   };
 
@@ -111,9 +127,15 @@ const FilterModal = ({ visible, mode, onClose, onApply }) => {
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>{mode === "sort" ? "정렬 기준" : "요리 시간"}</Text>
+          <Text style={styles.title}>
+            {{
+              sort: "정렬 기준",
+              time: "요리 시간",
+              level: "난이도",
+              userinfo: "내 정보 필터",
+            }[mode]}
+          </Text>
           <View style={styles.optionsContainer}>{renderOptions()}</View>
-
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
               <Text style={styles.cancelText}>취소</Text>

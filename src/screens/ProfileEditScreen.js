@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  StatusBar
+  ActivityIndicator,
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,6 +19,9 @@ import { API_BASE_URL } from "@env";
 import BottomTab from "../components/BottomTab";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { Audio } from "expo-av";
+import { OPENAI_API_KEY } from "@env"; // OpenAI API 키
+import * as FileSystem from "expo-file-system";
 
 const ALLERGY_OPTIONS = [
   { label: "게", value: "CRAB" },
@@ -42,6 +45,24 @@ const ALLERGY_OPTIONS = [
   { label: "호두", value: "WALNUT" },
 ];
 
+const TOOL_OPTIONS = [
+  { label: "전자레인지", value: "전자레인지" },
+  { label: "오븐", value: "오븐" },
+  { label: "냄비", value: "냄비" },
+  { label: "밥솥", value: "밥솥" },
+  { label: "팬", value: "팬" },
+  { label: "수저", value: "수저" },
+  { label: "칼", value: "칼" },
+  { label: "도마", value: "도마" },
+  { label: "체", value: "체" },
+  { label: "주걱", value: "주걱" },
+  { label: "집게", value: "집게" },
+  { label: "믹서", value: "믹서" },
+  { label: "볼", value: "볼" },
+  { label: "주방용 가위", value: "주방용 가위" },
+  { label: "그릇", value: "그릇" },
+];
+
 const ProfileEditScreen = () => {
   const { userInfo, setUserInfo } = useContext(AuthContext);
   const navigation = useNavigation();
@@ -52,11 +73,14 @@ const ProfileEditScreen = () => {
   const [toolNames, setToolNames] = useState(userInfo?.toolNames || []);
   const [ingredientNames, setIngredientNames] = useState(userInfo?.ingredientNames || []);
   const [pickerKey, setPickerKey] = useState(0);
+  const [recording, setRecording] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.navigate("Profile")}> 
+        <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
           <AntDesign name="arrowleft" size={24} style={{ marginLeft: 10 }} />
         </TouchableOpacity>
       ),
@@ -116,29 +140,111 @@ const ProfileEditScreen = () => {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert("마이크 권한이 필요합니다.");
+        return;
+      }
+  
+      // 기존 recording 객체가 있으면 stop하고 null로 초기화
+      if (recording) {
+        await recording.stopAndUnloadAsync();
+        setRecording(null);
+      }
+  
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+  
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+  
+      setRecording(newRecording);
+      console.log("🎙️ 녹음 시작됨");
+    } catch (err) {
+      console.error("🎤 녹음 시작 실패:", err);
+    }
+  };
+  
+
+  const stopRecording = async () => {
+    try {
+      setLoading(true);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      console.log("✅ 녹음된 파일:", uri);
+      uploadToWhisper(uri);
+    } catch (err) {
+      console.error("🛑 녹음 중지 실패:", err);
+    } finally {
+      setRecording(null);
+    }
+  };
+
+  const uploadToWhisper = async (uri) => {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      const fileBlob = {
+        uri: fileInfo.uri,
+        name: "voice.m4a",
+        type: "audio/m4a",
+      };
+
+      const formData = new FormData();
+      formData.append("file", fileBlob);
+      formData.append("model", "whisper-1");
+
+      const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.text) {
+        setTranscript(result.text);
+        setIngredientNames(result.text.split(","));
+      } else {
+        Alert.alert("⚠️ 음성 인식 실패", JSON.stringify(result));
+      }
+    } catch (err) {
+      console.error("🔁 Whisper 업로드 실패:", err);
+      Alert.alert("에러", "음성 인식 도중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.label}> 닉네임</Text>
+          <Text style={styles.label}>닉네임</Text>
           <TextInput style={styles.input} value={nickname} onChangeText={setNickname} placeholder="닉네임을 입력하세요." />
 
-          <Text style={styles.label}> 전화번호</Text>
+          <Text style={styles.label}>전화번호</Text>
           <TextInput style={styles.input} value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" placeholder="전화번호를 입력하세요." />
 
-          <Text style={styles.label}> 알레르기 음식</Text>
+          <Text style={styles.label}>알레르기 음식</Text>
           <View style={styles.pickerContainer}>
             <Picker
-              key={pickerKey} // key가 변경되면 Picker가 새로 마운트됨
-              selectedValue={""} // 항상 빈 문자열을 선택값으로 고정
+              key={pickerKey}
+              selectedValue={""}
               onValueChange={(value) => {
                 if (value !== "") {
-                  setAllergyNames((prev) => [...prev, value]);
-                  // Picker를 재렌더링하기 위해 key 값을 변경합니다.
-                  setPickerKey((prevKey) => prevKey + 1);
+                  if (allergyNames.includes(value)) {
+                    Alert.alert("⚠️ 중복 항목", "이미 선택한 항목입니다.");
+                  } else {
+                    setAllergyNames((prev) => [...prev, value]);
+                    setPickerKey((prev) => prev + 1);
+                  }
                 }
               }}
             >
@@ -163,7 +269,28 @@ const ProfileEditScreen = () => {
             );
           })}
 
-          <Text style={styles.label}> 보유한 도구</Text>
+          <Text style={styles.label}>보유한 도구</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={""}
+              onValueChange={(value) => {
+                if (value !== "") {
+                  if (toolNames.includes(value)) {
+                    Alert.alert("⚠️ 중복 항목", "이미 선택한 도구입니다.");
+                  } else {
+                    setToolNames((prev) => [...prev, value]);
+                    setPickerKey((prev) => prev + 1);
+                  }
+                }
+              }}
+            >
+              <Picker.Item label="도구를 선택하세요" value="" />
+              {TOOL_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={option.label} value={option.value} />
+              ))}
+            </Picker>
+          </View>
+
           {toolNames.map((item, index) => (
             <View key={index} style={styles.selectedRow}>
               <View style={styles.selectedItemBox}>
@@ -174,11 +301,18 @@ const ProfileEditScreen = () => {
               </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity onPress={() => addItem(setToolNames)} style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ 추가</Text>
-          </TouchableOpacity>
 
-          <Text style={styles.label}> 주로 사용하는 재료</Text>
+          <Text style={styles.label}>주로 사용하는 재료</Text>
+          <TouchableOpacity
+  onPress={recording ? stopRecording : startRecording}
+  style={styles.addButton}
+>
+  <Text style={styles.addButtonText}>
+    {recording ? "녹음 중지" : "음성으로 입력"}
+  </Text>
+</TouchableOpacity>
+
+
           {ingredientNames.map((item, index) => (
             <View key={index} style={styles.selectedRow}>
               <View style={styles.selectedItemBox}>
@@ -189,9 +323,6 @@ const ProfileEditScreen = () => {
               </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity onPress={() => addItem(setIngredientNames)} style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ 추가</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity onPress={handleUpdate} style={styles.button}>
             <Text style={styles.buttonText}>수정 완료</Text>
@@ -204,12 +335,7 @@ const ProfileEditScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    padding: 10,
-    backgroundColor: "#fff",
-  },  
+  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20 },
   scrollContainer: { flexGrow: 1, paddingBottom: 180 },
   label: { fontSize: 18, fontWeight: "bold", marginTop: 20 },
   input: {
@@ -232,11 +358,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 15,
   },
-  picker: {
-    width: "100%",
-    height: "100%",
-    fontSize: 18,
-  },
   selectedRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,16 +375,15 @@ const styles = StyleSheet.create({
   addButton: {
     marginTop: 10,
     alignSelf: "flex-start",
-    backgroundColor: "#E0F5EC",  // ✅ 연보라 예시
+    backgroundColor: "#E0F5EC",
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
   },
   addButtonText: {
-    color: "#1FCC79",  // 조금 진한 보라 글씨
+    color: "#1FCC79",
     fontWeight: "bold",
   },
-  
   button: {
     backgroundColor: "#1FCC79",
     padding: 15,
