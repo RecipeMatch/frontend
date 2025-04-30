@@ -7,12 +7,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { StatusBar, Platform } from "react-native";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
+import { ImageBackground } from "react-native";
+import FilterModal from "./FilterModal"; // ✅ 추가 (필터모달 컴포넌트 가져오기)
 
 const AllRecipesScreen = () => {
+  console.log("🔥 AllRecipesScreen 렌더링됨");
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listKey, setListKey] = useState("grid");
   const [sortBy, setSortBy] = useState(null);
+  const [category, setCategory] = useState(null); // ✅ 추가: 카테고리
+  const [isCategoryModalVisible, setCategoryModalVisible] = useState(false); // ✅ 추가: 카테고리 모달 상태
   const navigation = useNavigation();
   const { user } = useContext(AuthContext);
   const userUid = user?.email;
@@ -21,6 +26,9 @@ const AllRecipesScreen = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/recipeAll`);
       const data = await response.json();
+
+      console.log("🔥 받아온 레시피 데이터:", data);
+
       setRecipes(data);
     } catch (error) {
       console.error("🔥 API 요청 중 오류 발생:", error);
@@ -53,20 +61,61 @@ const AllRecipesScreen = () => {
     }
   };
 
+  const handleCategoryApply = async (filter) => {
+    try {
+      const selectedCategory = filter.category;
+      console.log("📂 선택한 카테고리:", selectedCategory);
+      setCategory(selectedCategory);
+
+      const allRes = await axios.get(`${API_BASE_URL}/api/recipeAll`);
+      const allRecipes = allRes.data;
+
+      const filteredRecipes = allRecipes.filter((r) => r.category === selectedCategory);
+      setRecipes(filteredRecipes);
+      setListKey(selectedCategory);
+    } catch (err) {
+      console.error("❌ 카테고리 필터 실패", err);
+    }
+  };
+
   useEffect(() => {
     fetchRecipes();
   }, []);
 
-  const renderRecipeItem = ({ item }) => {
-    const uploadedImageUrl = item.imageUrls?.length > 0 ? item.imageUrls[0] : null;
-    const finalImageUrl = uploadedImageUrl ?? getDefaultImageUrl(item.category);
 
-    return (
-      <TouchableOpacity 
-        style={styles.recipeCard} 
-        onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+const renderRecipeItem = ({ item }) => {
+  const hasImage = item.imageUrls && item.imageUrls.length > 0;
+  const finalImageSource = hasImage
+  ? { uri: item.imageUrls[0] } // ✅ 네트워크 이미지인 경우 uri 필요
+  : getDefaultImageUrl(item.category); // ✅ require() 결과는 객체 그대로
+
+
+  const categoryMap = {
+    KOREAN: "한식",
+    CHINESE: "중식",
+    JAPANESE: "일식",
+    WESTERN: "양식",
+    SOUTHEAST_ASIAN: "동남아",
+    ITALIAN: "이탈리안",
+    FUSION: "퓨전",
+    DEFAULT: "기본",
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.recipeCard} 
+      onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+    >
+      <ImageBackground
+        source={finalImageSource}
+        style={styles.recipeImage}
+        resizeMode="cover"
+        imageStyle={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }} // 상단 라운드
       >
-        <Image style={styles.recipeImage} source={{ uri: finalImageUrl }} resizeMode="cover" />
+        
+      </ImageBackground>
+
+      <View style={styles.recipeInfo}>
         <Text style={styles.recipeName} numberOfLines={1}>{item.recipeName}</Text>
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
@@ -78,15 +127,19 @@ const AllRecipesScreen = () => {
             <Text style={styles.statText}>{item.bookMarkSize}</Text>
           </View>
         </View>
-      </TouchableOpacity>
-    );
-  };
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+
+  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>모든 레시피</Text>
 
-      {/* ✅ 정렬 버튼 */}
+      {/* ✅ 정렬 + 카테고리 버튼 추가 */}
       <View style={styles.sortContainer}>
         <TouchableOpacity
           style={[styles.sortButton, sortBy === "LIKE" && styles.activeSort]}
@@ -100,6 +153,12 @@ const AllRecipesScreen = () => {
         >
           <Text style={styles.sortText}>즐겨찾기순</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setCategoryModalVisible(true)}
+        >
+          <Text style={styles.sortText}>카테고리</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -109,13 +168,20 @@ const AllRecipesScreen = () => {
           key={listKey}
           data={recipes}
           keyExtractor={(item, index) => item?.recipeId?.toString() ?? index.toString()}
-
           renderItem={renderRecipeItem}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContainer}
         />
       )}
+
+      {/* ✅ 카테고리 필터 모달 */}
+      <FilterModal
+        visible={isCategoryModalVisible}
+        mode="category"
+        onClose={() => setCategoryModalVisible(false)}
+        onApply={handleCategoryApply}
+      />
     </View>
   );
 };
@@ -133,12 +199,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 10,
     gap: 10,
+    flexWrap: "wrap", // 혹시 버튼 많아지면 줄바꿈 되게
   },
   sortButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     backgroundColor: "#f1f1f1",
     borderRadius: 20,
+    margin: 4,
   },
   activeSort: {
     backgroundColor: "#1FCC79",
@@ -167,6 +235,36 @@ const styles = StyleSheet.create({
   statsContainer: { flexDirection: "row", justifyContent: "center", paddingBottom: 8 },
   statItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 8 },
   statText: { fontSize: 14, marginLeft: 4, color: "#444" },
+  categoryOverlay: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  recipeInfo: {
+    backgroundColor: "#fff",
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    paddingTop: 6,
+    paddingBottom: 10,
+    paddingHorizontal: 8,
+  },
+  recipeImage: {
+    width: "100%",
+    height: 120,
+    backgroundColor: "#eee",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+  },
+  
 });
 
 export default AllRecipesScreen;
