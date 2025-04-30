@@ -49,7 +49,7 @@ const UploadScreen2 = () => {
   // 각 배열이 비어있으면 기본적으로 1칸씩 채워주기
   useEffect(() => {
     if (ingredients.length === 0) {
-      setIngredients([""]);
+      setIngredients([{ ingredientName: "", quantity: "" }]);
     }
     if (equipment.length === 0) {
       setEquipment([""]);
@@ -64,7 +64,7 @@ const UploadScreen2 = () => {
 
   // 재료 추가
   const addIngredient = () => {
-    setIngredients([...ingredients, ""]);
+    setIngredients([...ingredients, { ingredientName: "", quantity: "" }]);
   };
   // 재료 삭제
   const removeIngredient = (index) => {
@@ -117,7 +117,8 @@ const UploadScreen2 = () => {
     }
 
     const formattedIngredients = ingredients.map(item => ({
-      ingredientName: item,
+      ingredientName: item.ingredientName,
+      quantity: item.quantity,
     }));
 
     const formattedSteps = safeSteps.map((step, index) => ({
@@ -127,10 +128,15 @@ const UploadScreen2 = () => {
 
     const categoryMapping = {
       "한식": "KOREAN",
-      "양식": "WESTERN",
       "중식": "CHINESE",
-      "일식": "JAPANESE"
+      "일식": "JAPANESE",
+      "양식": "WESTERN",
+      "동남아시아": "SOUTHEAST_ASIAN",
+      "이탈리안": "ITALIAN",
+      "퓨전": "FUSION",
+      "기본": "DEFAULT",
     };
+    
     
     const recipeData = {
       userUid: userUid,
@@ -231,31 +237,42 @@ const UploadScreen2 = () => {
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* 재료 입력 */}
-        <Text style={styles.label}>재료</Text>
-        {ingredients.map((ingredient, index) => (
-          <View key={index} style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="재료를 입력하세요."
-              value={ingredient}
-              onChangeText={(text) => {
-                const newIngredients = [...ingredients];
-                newIngredients[index] = text;
-                setIngredients(newIngredients);
-              }}
-            />
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              onPress={() => removeIngredient(index)}
-            >
-              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-            </TouchableOpacity>
-          </View>
-        ))}
-        <TouchableOpacity style={styles.addButton} onPress={addIngredient}>
-          <Ionicons name="add-outline" size={20} color="#1FCC79" />
-          <Text style={styles.addButtonText}>재료 추가</Text>
-        </TouchableOpacity>
+        
+<Text style={styles.label}>재료</Text>
+{ingredients.map((item, index) => (
+  <View key={index} style={styles.inputRow}>
+    <TextInput
+      style={[styles.input, { flex: 1 }]}
+      placeholder="재료명"
+      value={item.ingredientName}
+      onChangeText={(text) => {
+        const newIngredients = [...ingredients];
+        newIngredients[index].ingredientName = text;
+        setIngredients(newIngredients);
+      }}
+    />
+    <TextInput
+      style={[styles.input, { flex: 1, marginLeft: 10 }]}
+      placeholder="수량 (예: 1컵, 100g)"
+      value={item.quantity}
+      onChangeText={(text) => {
+        const newIngredients = [...ingredients];
+        newIngredients[index].quantity = text;
+        setIngredients(newIngredients);
+      }}
+    />
+    <TouchableOpacity
+      onPress={() => removeIngredient(index)}
+      style={styles.deleteButton}
+    >
+      <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+    </TouchableOpacity>
+  </View>
+))}
+<TouchableOpacity style={styles.addButton} onPress={addIngredient}>
+  <Ionicons name="add-outline" size={20} color="#1FCC79" />
+  <Text style={styles.addButtonText}>재료 추가</Text>
+</TouchableOpacity>
 
         {/* 도구 입력 */}
         <Text style={styles.label}>도구</Text>
