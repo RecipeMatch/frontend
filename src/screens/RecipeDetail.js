@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ImageBackground
 } from "react-native";
+import { Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { API_BASE_URL } from "@env";
 import { getDefaultImageUrl } from "../utils/getDefaultImageUrl";
+
 import { AuthContext } from "../context/AuthContext";
 import Tts from "react-native-tts";
 
@@ -30,13 +33,78 @@ const RecipeDetail = ({ route }) => {
   const [likeCount, setLikeCount] = useState(initialRecipe.likeSize ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(initialRecipe.recipeBookMark ?? false);
   const [bookmarkCount, setBookmarkCount] = useState(initialRecipe.bookMarkSize ?? 0);
+  const uploadedImageUrl = recipe.imageUrls?.length > 0 && typeof recipe.imageUrls[0] === "string"
+  ? recipe.imageUrls[0]
+  : null;
+
+const finalImageSource = uploadedImageUrl
+  ? { uri: uploadedImageUrl }
+  : getDefaultImageUrl(recipe.category);  // 이 부분을 getDefaultImageUrl로 수정
 
   useEffect(() => {
     fetchComments();
     fetchIngredientQuantities();
     Tts.setDefaultLanguage("ko-KR");
+    
   }, []);
 
+  // 👇 RecipeDetail 컴포넌트 안에 추가
+  const MissingIngredientsSection = ({ recipeId, userUid }) => {
+    const [products, setProducts] = useState([]);
+  
+    useEffect(() => {
+      const fetchMissing = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/recommendations/products?recipeId=${recipeId}&userUid=${userUid}`);
+          const data = await response.json();
+          console.log("🔥 서버 응답 데이터:", data);  // <- 추가
+          if (data.hasMissing) {
+            setProducts(data.products);
+          }
+        } catch (e) {
+          console.error("부족 재료 상품 조회 실패:", e);
+        }
+      };
+      fetchMissing();
+    }, []);
+  
+    if (products.length === 0) {
+      return null;
+    }
+  
+    return (
+      <View style={{ marginTop: 24 }}>
+  <Text style={styles.sectionTitle}>부족한 재료 추천 상품</Text>
+  {products.map((item, index) => (
+    <TouchableOpacity
+      key={index}
+      style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+      onPress={() => {
+        if (item.productUrl) {
+          Linking.openURL(item.productUrl);
+        } else {
+          Alert.alert("링크 없음", "해당 상품 링크가 존재하지 않습니다.");
+        }
+    
+      }}
+    >
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={{ width: 60, height: 60, borderRadius: 8, marginRight: 12 }}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.name}</Text>
+        <Text style={{ color: "#666", marginTop: 4 }}>
+          {item.price?.toLocaleString() ?? "가격정보 없음"}원
+        </Text>
+      </View>
+    </TouchableOpacity>
+  ))}
+</View>
+
+    );
+  };
+  
   const fetchComments = async () => {
     setLoading(true);
     try {
@@ -175,7 +243,13 @@ const RecipeDetail = ({ route }) => {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{recipe.recipeName}</Text>
-        <Image source={{ uri: finalImageUrl }} style={styles.recipeImage} />
+        <ImageBackground
+  source={finalImageSource}
+  style={styles.recipeImage}
+  resizeMode="cover"
+  imageStyle={{ borderRadius: 10 }}
+/>
+
 
         <View style={styles.actionsContainer}>
           <TouchableOpacity onPress={toggleLike} style={styles.actionButton}>
@@ -220,7 +294,8 @@ const RecipeDetail = ({ route }) => {
 
           </>
         )}
-{/*
+{
+/*
         <Text style={styles.sectionTitle}>도구</Text>
         {recipe.toolName.map((t, idx) => (
   <View key={idx} style={styles.infoCard}>
@@ -238,6 +313,7 @@ const RecipeDetail = ({ route }) => {
           </>
         )}
 */}
+<MissingIngredientsSection recipeId={recipe.id} userUid={userInfo.uid} />
 <Text style={styles.sectionTitle}>도구                                   대체 도구</Text>
 
 {recipe.toolName.map((tool, idx) => (
