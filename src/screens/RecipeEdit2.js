@@ -1,207 +1,261 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
+  View, Text, TextInput, TouchableOpacity,
+  ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, StatusBar
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import RNFetchBlob from "react-native-blob-util";
-import { Ionicons } from "@expo/vector-icons";
 
-const RecipeEdit2 = () => {
+const RecipeEdit2 = ({ route }) => {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { recipe, foodName, description, cookingDuration, category, image } = route.params;
+  const { recipe } = route.params;
 
-  // 기존 레시피 데이터 기반으로 상태값 설정
-  const [ingredients, setIngredients] = useState(recipe.recipeIngredientDtos.map(i => i.ingredientName));
-  const [equipment, setEquipment] = useState(recipe.toolName);
-  const [steps, setSteps] = useState(recipe.recipeStepDtos.map(s => s.content));
+  const [ingredients, setIngredients] = useState(
+    recipe.recipeIngredientDtos.map(i => ({
+      ingredientName: i.ingredientName,
+      quantity: i.quantity || ""
+    }))
+  );
+  const [equipment, setEquipment] = useState(recipe.toolName || []);
+  const [steps, setSteps] = useState(recipe.recipeStepDtos.map(step => step.content));
+  const [allergyInfo, setAllergyInfo] = useState(null);
+  const [alternativeToolInfo, setAlternativeToolInfo] = useState(null);
 
-  // 재료 추가 & 삭제
-  const addIngredient = () => setIngredients([...ingredients, ""]);
+  const addIngredient = () => {
+    setIngredients([...ingredients, { ingredientName: "", quantity: "" }]);
+  };
   const removeIngredient = (index) => {
     if (ingredients.length > 1) {
-      setIngredients(ingredients.filter((_, i) => i !== index));
+      const newIngredients = [...ingredients];
+      newIngredients.splice(index, 1);
+      setIngredients(newIngredients);
     } else {
-      Alert.alert("경고", "최소 1개의 재료는 필요합니다.");
+      Alert.alert("안내", "최소 1개 이상의 재료가 필요합니다.");
     }
   };
 
-  // 도구 추가 & 삭제
-  const addEquipment = () => setEquipment([...equipment, ""]);
+  const addEquipment = () => {
+    setEquipment([...equipment, ""]);
+  };
   const removeEquipment = (index) => {
     if (equipment.length > 1) {
-      setEquipment(equipment.filter((_, i) => i !== index));
+      const newEquipment = [...equipment];
+      newEquipment.splice(index, 1);
+      setEquipment(newEquipment);
     } else {
-      Alert.alert("경고", "최소 1개의 도구는 필요합니다.");
+      Alert.alert("안내", "최소 1개 이상의 도구가 필요합니다.");
     }
   };
 
-  // 요리 순서 추가 & 삭제
-  const addStep = () => setSteps([...steps, ""]);
+  const addStep = () => {
+    setSteps([...steps, ""]);
+  };
   const removeStep = (index) => {
     if (steps.length > 1) {
-      setSteps(steps.filter((_, i) => i !== index));
+      const newSteps = [...steps];
+      newSteps.splice(index, 1);
+      setSteps(newSteps);
     } else {
-      Alert.alert("경고", "최소 1개의 요리 순서는 필요합니다.");
+      Alert.alert("안내", "최소 1개 이상의 요리 순서가 필요합니다.");
     }
   };
 
-  // 레시피 수정 요청
   const updateRecipe = async () => {
+    const formattedIngredients = ingredients.map(item => ({
+      ingredientName: item.ingredientName,
+      quantity: item.quantity
+    }));
+
+    const formattedSteps = steps.map((step, index) => ({
+      stepOrder: index + 1,
+      content: step,
+    }));
+
+    const data = [
+      {
+        name: "request",
+        data: JSON.stringify({
+          recipeIngredientDtos: formattedIngredients,
+          recipeStepDtos: formattedSteps,
+          toolName: equipment,
+        }),
+        type: "application/json"
+      }
+    ];
+
     try {
-      Alert.alert("수정 확인", "레시피를 수정하시겠습니까?", [
-        { text: "취소", style: "cancel" },
-        {
-          text: "수정",
-          style: "default",
-          onPress: async () => {
-            const recipeData = {
-              recipeName: foodName,
-              description,
-              cookingTime: cookingDuration,
-              category,
-              recipeIngredientDtos: ingredients.map(ingredient => ({ ingredientName: ingredient })),
-              recipeStepDtos: steps.map((step, index) => ({ stepOrder: index + 1, content: step })),
-              toolName: equipment,
-            };
+      const res = await RNFetchBlob.fetch(
+        "PATCH",
+        `${API_BASE_URL}/api/recipe/${recipe.id}`,
+        { "Content-Type": "multipart/form-data" },
+        data
+      );
 
-            const data = [{ name: "request", data: JSON.stringify(recipeData), type: "application/json" }];
-            if (image && image !== recipe.imageUrls?.[0]) {
-              data.push({
-                name: "files",
-                filename: "update.jpg",
-                type: "image/jpeg",
-                data: RNFetchBlob.wrap(image),
-              });
-            }
+      const responseText = await res.text();
+      let responseJSON = {};
+      try {
+        responseJSON = JSON.parse(responseText);
+        console.log("🔍 파싱된 응답:", responseJSON);
+      } catch (err) {
+        console.error("응답 파싱 실패:", err);
+      }
 
-            const res = await RNFetchBlob.fetch("PATCH", `${API_BASE_URL}/api/recipe/${recipe.id}`, {
-              "Content-Type": "multipart/form-data",
-            }, data);
+      setAllergyInfo(responseJSON.allergies?.length ? responseJSON.allergies.join(', ') : null);
+      setAlternativeToolInfo(responseJSON.alterTools || null);
 
-            if (res.respInfo?.status >= 200 && res.respInfo?.status < 300) {
-              Alert.alert("수정 완료", "레시피가 성공적으로 수정되었습니다.");
-            
-              navigation.reset({
-                index: 2, // 0-based index, 세 번째 화면(MyRecipeList)이 맨 위가 됨
-                routes: [
-                  { name: "Home" },       // 0번째
-                  { name: "Profile" },  // 1번째
-                  { name: "MyRecipeList" } // 2번째 (현재 화면)
-                ],
-              });
-            } else {
-              Alert.alert("수정 실패", "서버 오류가 발생했습니다.");
-            }                       
-          },
-        },
-      ]);
+      if (res.info().status >= 200 && res.info().status < 300) {
+        Alert.alert("성공", "레시피가 수정되었습니다.");
+        navigation.reset({
+          index: 2,
+          routes: [
+            { name: "Home" },
+            { name: "Profile" },
+            { name: "MyRecipeList" }
+          ],
+        });
+      } else {
+        Alert.alert("오류", "수정에 실패했습니다.");
+      }
     } catch (error) {
-      Alert.alert("오류", "레시피 수정 중 문제가 발생했습니다.");
+      Alert.alert("오류", `서버 오류가 발생했습니다: ${error.message}`);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* 🥕 재료 입력 */}
-      <Text style={styles.label}>재료</Text>
-      {ingredients.map((ingredient, index) => (
-        <View key={index} style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="재료 입력"
-            value={ingredient}
-            onChangeText={(text) => {
-              const newIngredients = [...ingredients];
-              newIngredients[index] = text;
-              setIngredients(newIngredients);
-            }}
-          />
-          <TouchableOpacity style={styles.deleteButton} onPress={() => removeIngredient(index)}>
-            <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-          </TouchableOpacity>
-        </View>
-      ))}
-      <TouchableOpacity style={styles.addButton} onPress={addIngredient}>
-        <Ionicons name="add-outline" size={20} color="#1FCC79" />
-        <Text style={styles.addButtonText}>재료 추가</Text>
-      </TouchableOpacity>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={styles.container}
+    >
+      <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.label}>재료</Text>
+        {ingredients.map((item, index) => (
+          <View key={index} style={styles.inputRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="재료명"
+              value={item.ingredientName}
+              onChangeText={(text) => {
+                const updated = [...ingredients];
+                updated[index].ingredientName = text;
+                setIngredients(updated);
+              }}
+            />
+            <TextInput
+              style={[styles.input, { flex: 1, marginLeft: 10 }]}
+              placeholder="수량 (예: 1컵, 100g)"
+              value={item.quantity}
+              onChangeText={(text) => {
+                const updated = [...ingredients];
+                updated[index].quantity = text;
+                setIngredients(updated);
+              }}
+            />
+            <TouchableOpacity onPress={() => removeIngredient(index)} style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addButton} onPress={addIngredient}>
+          <Ionicons name="add-outline" size={20} color="#1FCC79" />
+          <Text style={styles.addButtonText}>재료 추가</Text>
+        </TouchableOpacity>
 
-      {/* 🔪 도구 입력 */}
-      <Text style={styles.label}>도구</Text>
-      {equipment.map((tool, index) => (
-        <View key={index} style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="도구 입력"
-            value={tool}
-            onChangeText={(text) => {
-              const newEquipment = [...equipment];
-              newEquipment[index] = text;
-              setEquipment(newEquipment);
-            }}
-          />
-          <TouchableOpacity style={styles.deleteButton} onPress={() => removeEquipment(index)}>
-            <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-          </TouchableOpacity>
-        </View>
-      ))}
-      <TouchableOpacity style={styles.addButton} onPress={addEquipment}>
-        <Ionicons name="add-outline" size={20} color="#1FCC79" />
-        <Text style={styles.addButtonText}>도구 추가</Text>
-      </TouchableOpacity>
+        <Text style={styles.label}>도구</Text>
+        {equipment.map((item, index) => (
+          <View key={index} style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="도구를 입력하세요."
+              value={item}
+              onChangeText={(text) => {
+                const updated = [...equipment];
+                updated[index] = text;
+                setEquipment(updated);
+              }}
+            />
+            <TouchableOpacity onPress={() => removeEquipment(index)} style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addButton} onPress={addEquipment}>
+          <Ionicons name="add-outline" size={20} color="#1FCC79" />
+          <Text style={styles.addButtonText}>도구 추가</Text>
+        </TouchableOpacity>
 
-      {/* 🍳 요리 순서 입력 */}
-      <Text style={styles.label}>요리 순서</Text>
-      {steps.map((step, index) => (
-        <View key={index} style={styles.inputRow}>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder={`요리 순서 ${index + 1}`}
-            value={step}
-            onChangeText={(text) => {
-              const newSteps = [...steps];
-              newSteps[index] = text;
-              setSteps(newSteps);
-            }}
-            multiline
-          />
-          <TouchableOpacity style={styles.deleteButton} onPress={() => removeStep(index)}>
-            <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-          </TouchableOpacity>
-        </View>
-      ))}
-      <TouchableOpacity style={styles.addButton} onPress={addStep}>
-        <Ionicons name="add-outline" size={20} color="#1FCC79" />
-        <Text style={styles.addButtonText}>순서 추가</Text>
-      </TouchableOpacity>
+        <Text style={styles.label}>요리 순서</Text>
+        {steps.map((step, index) => (
+          <View key={index} style={styles.inputRow}>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder={`요리 순서 ${index + 1}`}
+              value={step}
+              onChangeText={(text) => {
+                const updated = [...steps];
+                updated[index] = text;
+                setSteps(updated);
+              }}
+              multiline
+            />
+            <TouchableOpacity onPress={() => removeStep(index)} style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addButton} onPress={addStep}>
+          <Ionicons name="add-outline" size={20} color="#1FCC79" />
+          <Text style={styles.addButtonText}>순서 추가</Text>
+        </TouchableOpacity>
 
-      {/* 수정 버튼 */}
-      <TouchableOpacity style={styles.saveButton} onPress={updateRecipe}>
-        <Text style={styles.saveButtonText}>수정 완료</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {allergyInfo && (
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoTitle}>알레르기 정보</Text>
+            <Text style={styles.infoText}>{allergyInfo}</Text>
+          </View>
+        )}
+
+        {alternativeToolInfo && (
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoTitle}>대체 도구 정보</Text>
+            <Text style={styles.infoText}>{alternativeToolInfo}</Text>
+          </View>
+        )}
+
+      </ScrollView>
+
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonText}>뒤로가기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={updateRecipe}>
+          <Text style={styles.nextButtonText}>수정 완료</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 20, paddingTop: StatusBar.currentHeight || 20 },
+  scrollContainer: { flexGrow: 1, paddingBottom: 150, justifyContent: "flex-start" },
   label: { fontSize: 18, fontWeight: "bold", marginTop: 20 },
+  input: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14, fontSize: 18, marginTop: 10, backgroundColor: "#F7F7F7" },
+  textArea: { height: 120 },
   inputRow: { flexDirection: "row", alignItems: "center" },
-  input: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 14, fontSize: 18, marginTop: 5 },
-  textArea: { minHeight: 80 },
   addButton: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   addButtonText: { fontSize: 16, fontWeight: "bold", color: "#1FCC79", marginLeft: 5 },
-  deleteButton: { marginLeft: 10, marginTop: 5 },
-  saveButton: { backgroundColor: "#1FCC79", padding: 15, borderRadius: 15, alignItems: "center", marginTop: 20 },
-  saveButtonText: { fontSize: 18, color: "#fff", fontWeight: "bold" },
+  deleteButton: { marginLeft: 10, marginTop: 10 },
+  navContainer: { position: "absolute", bottom: 20, left: 20, right: 20, flexDirection: "row", alignItems: "center" },
+  backButton: { flex: 1, marginRight: 10, backgroundColor: "#F5F5F5", paddingVertical: 14, borderRadius: 12, elevation: 3, alignItems: "center" },
+  backButtonText: { fontSize: 18, color: "#333", fontWeight: "600" },
+  nextButton: { flex: 1, backgroundColor: "#1FCC79", paddingVertical: 14, borderRadius: 12, elevation: 4, alignItems: "center" },
+  nextButtonText: { fontSize: 18, color: "#fff", fontWeight: "700" },
+  infoContainer: { marginTop: 20, padding: 15, backgroundColor: "#EFEFEF", borderRadius: 10 },
+  infoTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
+  infoText: { fontSize: 14, color: "#555" }
 });
 
 export default RecipeEdit2;
