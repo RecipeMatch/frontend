@@ -106,7 +106,7 @@ const editRecipe = (recipe) => {
 
   // 🖼️ 레시피 카드 렌더링
   const renderRecipeItem = ({ item }) => {
-    const uploadedImageUrl = item.urls?.length > 0 ? item.urls[0] : null;
+    const uploadedImageUrl = item.imageUrls?.length > 0 ? item.imageUrls[0] : null;
     const finalImageUrl = uploadedImageUrl ?? getDefaultImageUrl(item.category);
 
     return (
@@ -115,8 +115,12 @@ const editRecipe = (recipe) => {
           style={styles.cardTouchable}
           onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
         >
-          <Image style={styles.cardImage} source={{ uri: finalImageUrl }} resizeMode="cover" />
-          <View style={styles.cardBody}>
+         <Image
+  style={styles.cardImage}
+  source={typeof finalImageUrl === "string" ? { uri: finalImageUrl } : finalImageUrl}
+  resizeMode="cover"
+/>
+ <View style={styles.cardBody}>
             <Text style={styles.recipeTitle}>{item.recipeName}</Text>
             <Text style={styles.recipeDesc}>{item.description}</Text>
             <View style={styles.infoRow}>
