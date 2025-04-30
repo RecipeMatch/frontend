@@ -87,11 +87,15 @@ const UploadScreen = () => {
     return () => backHandler.remove();
 }, [navigation]);
 
-  const categoryOptions = [
-    { label: "한식", value: "KOREAN" },
-    { label: "양식", value: "WESTERN" },
-    { label: "중식", value: "CHINESE" },
-    { label: "일식", value: "JAPANESE" },
+  const categoryOptions = [ 
+    { label: "한식", value: "KOREAN" }, 
+    { label: "중식", value: "CHINESE" }, 
+    { label: "일식", value: "JAPANESE" }, 
+    { label: "양식", value: "WESTERN" }, 
+    { label: "동남아시아", value: "SOUTHEAST_ASIAN" }, 
+    { label: "이탈리안", value: "ITALIAN" }, 
+    { label: "퓨전", value: "FUSION" }, 
+    { label: "기본", value: "DEFAULT" }, 
   ];
 
   return (
