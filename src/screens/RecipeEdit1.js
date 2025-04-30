@@ -18,6 +18,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 
 const RecipeEdit1 = () => {
+  console.log("에딧1 실행");
   const navigation = useNavigation();
   const route = useRoute();
   const { recipe } = route.params;
@@ -57,11 +58,15 @@ const RecipeEdit1 = () => {
     });
   };
 
-  const categoryOptions = [
-    { label: "한식", value: "KOREAN" },
-    { label: "양식", value: "WESTERN" },
-    { label: "중식", value: "CHINESE" },
-    { label: "일식", value: "JAPANESE" },
+  const categoryOptions = [ 
+    { label: "한식", value: "KOREAN" }, 
+    { label: "중식", value: "CHINESE" }, 
+    { label: "일식", value: "JAPANESE" }, 
+    { label: "양식", value: "WESTERN" }, 
+    { label: "동남아시아", value: "SOUTHEAST_ASIAN" }, 
+    { label: "이탈리안", value: "ITALIAN" }, 
+    { label: "퓨전", value: "FUSION" }, 
+    { label: "기본", value: "DEFAULT" }, 
   ];
 
   return (
