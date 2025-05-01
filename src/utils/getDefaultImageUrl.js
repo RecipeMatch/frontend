@@ -1,16 +1,21 @@
-import { API_BASE_URL } from "@env";
-
-export function getDefaultImageUrl(category) {
+// src/utils/getDefaultImageUrl.js
+export const getDefaultImageUrl = (category) => {
   switch (category) {
     case "KOREAN":
-      return `${API_BASE_URL}/images/korean.jpg`;
-    case "WESTERN":
-      return `${API_BASE_URL}/images/western.jpg`;
+      return require("../../assets/images/Korean.png"); // ✅ 수정된 경로
     case "CHINESE":
-      return `${API_BASE_URL}/images/chinese.jpg`;
+      return require("../../assets/images/Chinese.png");
     case "JAPANESE":
-      return `${API_BASE_URL}/images/japanese.jpg`;
+      return require("../../assets/images/Japanese.png");
+    case "WESTERN":
+      return require("../../assets/images/Western.png");
+    case "SOUTHEAST_ASIAN":
+      return require("../../assets/images/SoutheastAsian.png");
+    case "ITALIAN":
+      return require("../../assets/images/Italian.png");
+    case "FUSION":
+      return require("../../assets/images/Fusion.png");
     default:
-      return `${API_BASE_URL}/images/default.jpg`;
+      return require("../../assets/images/Default.png");
   }
-}
+};
