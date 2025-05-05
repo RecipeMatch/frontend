@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import CommentItem from './CommentItem';
 import { getAuth } from 'firebase/auth';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -105,21 +106,22 @@ const CommunityDetailScreen = ({ route }) => {
       <Text style={styles.commentTitle}>💬 댓글</Text>
 
       <FlatList
-        data={comments}
-        keyExtractor={(item, index) => {
-          // Ensure each comment has a unique key by checking commentId and using index if necessary
-          return item.commentId ? String(item.commentId) : `comment-${index}`;
-        }}
-        renderItem={({ item }) => (
-          <View style={styles.commentItem}>
-            <Text style={styles.commentUid}>{item.uid}</Text>
-            <Text>{item.content}</Text>
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text style={{ color: '#888', marginTop: 8 }}>댓글이 없습니다.</Text>
-        }
-      />
+  data={comments}
+  keyExtractor={(item, index) => {
+    return item.commentId ? String(item.commentId) : `comment-${index}`;
+  }}
+  renderItem={({ item }) => (
+    <CommentItem
+      comment={item}
+      currentUserUid={currentUser?.email}
+      onRefresh={fetchComments}
+    />
+  )}
+  ListEmptyComponent={
+    <Text style={{ color: '#888', marginTop: 8 }}>댓글이 없습니다.</Text>
+  }
+/>
+
 
       <TextInput
         style={styles.commentInput}

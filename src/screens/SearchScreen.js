@@ -6,11 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   SafeAreaView,
   StatusBar,
   Alert,
   Image,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -19,73 +19,186 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import FilterModal from "./FilterModal";
 
+const getDefaultImageUrl = (category) => {
+  switch (category) {
+    case "KOREAN":
+      return `${API_BASE_URL}/images/korean.jpg`;
+    case "WESTERN":
+      return `${API_BASE_URL}/images/western.jpg`;
+    case "CHINESE":
+      return `${API_BASE_URL}/images/chinese.jpg`;
+    case "JAPANESE":
+      return `${API_BASE_URL}/images/japanese.jpg`;
+    default:
+      return `${API_BASE_URL}/images/default.jpg`;
+  }
+};
+
 const SearchScreen = () => {
   const navigation = useNavigation();
+  const { userInfo } = useContext(AuthContext);
+
   const [searchText, setSearchText] = useState("");
   const [recipes, setRecipes] = useState([]);
+  const [sortBy, setSortBy] = useState(null);
+
   const [showSortModal, setShowSortModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-  const handleApplyFilter = (data) => {
-    setRecipes(data);
+  const [filterState, setFilterState] = useState({
+    difficulty: null,
+    minTime: null,
+    maxTime: null,
+    userInfo: false,
+    category: null,
+    sortBy: null,
+  });
+
+  const applySearchWithFilter = async (customFilter = {}) => {
+    const fullFilter = {
+      ...filterState,
+      ...customFilter,
+      keyword: searchText,
+      userUid: userInfo?.uid,
+    };
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/recipe/search`, fullFilter);
+      let result = [...res.data];
+      const activeSort = customFilter.sortBy ?? sortBy;
+      if (activeSort === "LIKE") result.sort((a, b) => b.likeSize - a.likeSize);
+      else if (activeSort === "BOOKMARK") result.sort((a, b) => b.bookMarkSize - a.bookMarkSize);
+      setRecipes(result);
+    } catch (e) {
+      console.error("❌ 검색/필터 실패:", e);
+      Alert.alert("에러", "레시피를 불러오는 중 문제가 발생했습니다.");
+    }
   };
 
-  const handleApplyLevel = (data) => {
-    setRecipes(data);
-    setShowLevelModal(false);
+  const handleApplyFilter = async (partialFilter) => {
+    const updatedSortBy = partialFilter.sortBy ?? sortBy;
+    setSortBy(updatedSortBy);
+    setFilterState((prev) => ({ ...prev, ...partialFilter }));
+    await applySearchWithFilter({ ...partialFilter, sortBy: updatedSortBy });
   };
 
-  const handleApplyUserFilter = (data) => {
-    setRecipes(data);
-    setShowUserModal(false);
+  const handleSearchSubmit = () => {
+    Keyboard.dismiss();
+    applySearchWithFilter();
   };
-  
-  const searchHistory = ["김치찌개", "볶음밥", "된장찌개"];
-  const recommendedRecipes = ["떡볶이", "카레", "불고기"];
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.searchBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search recipes..."
-          value={searchText}
-          onChangeText={setSearchText}
-        />
-        <TouchableOpacity onPress={() => setShowSortModal(true)}>
-          <Text style={styles.filterText}>정렬기준 ⬍</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-        <TouchableOpacity style={styles.leftFilter} onPress={() => setShowFilterModal(true)}>
-          <Text style={styles.filterText}>요리 시간 ⏱</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.leftFilter} onPress={() => setShowLevelModal(true)}>
-          <Text style={styles.filterText}>난이도 🎚</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.leftFilter} onPress={() => setShowUserModal(true)}>
-          <Text style={styles.filterText}>내 정보 필터 🎯</Text>
-        </TouchableOpacity>
-      </View>
-
       <FlatList
+        ListHeaderComponent={
+          <>
+            <View style={styles.searchBar}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={24} color="black" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="레시피 이름으로 검색"
+                value={searchText}
+                onChangeText={setSearchText}
+                onSubmitEditing={handleSearchSubmit}
+              />
+              <TouchableOpacity onPress={handleSearchSubmit}>
+                <Ionicons name="search-outline" size={22} color="black" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.filterRow}>
+              <TouchableOpacity
+                style={[styles.filterBtn, filterState.minTime !== null && styles.selected]}
+                onPress={() => setShowFilterModal(true)}
+              >
+                <Text style={styles.filterText}>
+                  {filterState.minTime === 0 && filterState.maxTime === 30
+                    ? "30분 이하"
+                    : filterState.minTime === 30 && filterState.maxTime === 60
+                    ? "30~60분"
+                    : filterState.minTime === 60 && filterState.maxTime === 90
+                    ? "60~90분"
+                    : filterState.minTime === 90
+                    ? "90분 이상"
+                    : "요리 시간 ⏱"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterBtn, !!filterState.difficulty && styles.selected]}
+                onPress={() => setShowLevelModal(true)}
+              >
+                <Text style={styles.filterText}>
+                  {filterState.difficulty === "EASY"
+                    ? "초보 🎚"
+                    : filterState.difficulty === "MIDDLE"
+                    ? "보통 🎚"
+                    : filterState.difficulty === "HARD"
+                    ? "어려움 🎚"
+                    : "난이도 🎚"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterBtn, !!filterState.category && styles.selected]}
+                onPress={() => setShowCategoryModal(true)}
+              >
+                <Text style={styles.filterText}>
+                  {{
+                    KOREAN: "한식",
+                    CHINESE: "중식",
+                    JAPANESE: "일식",
+                    WESTERN: "양식",
+                    SOUTHEAST_ASIAN: "동남아시아",
+                    ITALIAN: "이탈리안",
+                    FUSION: "퓨전",
+                    DEFAULT: "기본",
+                  }[filterState.category] ?? "카테고리 🍱"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterBtn, filterState.userInfo && styles.selected]}
+                onPress={() => setShowUserModal(true)}
+              >
+                <Text style={styles.filterText}>
+                  {filterState.userInfo ? "내 정보 필터 ✅" : "내 정보 필터"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.filterBtn, sortBy && styles.selected]}
+                onPress={() => setShowSortModal(true)}
+              >
+                <Text style={styles.filterText}>
+                  {sortBy === "LIKE"
+                    ? "좋아요순"
+                    : sortBy === "BOOKMARK"
+                    ? "즐겨찾기순"
+                    : "정렬기준 ⬍"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        }
         data={recipes}
-        keyExtractor={(item, index) => item?.recipeId?.toString() ?? index.toString()}
-        renderItem={({ item }) => {
-          const imageUrl = item.imageUrls?.[0] ?? "https://cdn-icons-png.flaticon.com/512/1404/1404945.png";
-          return (
-            <TouchableOpacity
-              style={styles.recipeCard}
-              onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
-            >
-              <Image style={styles.recipeImage} source={{ uri: imageUrl }} resizeMode="cover" />
-              <Text style={styles.recipeName} numberOfLines={1}>{item.recipeName}</Text>
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+            activeOpacity={0.8}
+          >
+            <View style={styles.recipeCard}>
+              <Image
+                source={{ uri: item.imageUrls?.[0] ?? getDefaultImageUrl(item.category) }}
+                style={styles.recipeImage}
+              />
+              <Text style={styles.recipeName}>{item.recipeName}</Text>
               <Text style={styles.recipeTime}>⏱ {item.cookingTime}분</Text>
               <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
@@ -97,180 +210,100 @@ const SearchScreen = () => {
                   <Text style={styles.statText}>{item.bookMarkSize}</Text>
                 </View>
               </View>
-            </TouchableOpacity>
-          );
-        }}
-        ListHeaderComponent={
-          <>
-            <Text style={styles.sectionTitle}>이전 검색 기록</Text>
-            <View style={styles.tagContainer}>
-              {searchHistory.map((item, index) => (
-                <TouchableOpacity key={index} style={styles.tag}>
-                  <Ionicons name="time-outline" size={16} color="gray" />
-                  <Text style={styles.tagText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
             </View>
-            <Text style={styles.sectionTitle}>추천 검색어</Text>
-            <View style={styles.tagContainer}>
-              {recommendedRecipes.map((item, index) => (
-                <TouchableOpacity key={index} style={styles.tagRecommended}>
-                  <Ionicons name="flame-outline" size={16} color="gray" />
-                  <Text style={styles.tagText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        }
+          </TouchableOpacity>
+        )}
+        
       />
-
-      <FilterModal visible={showSortModal} mode="sort" onClose={() => setShowSortModal(false)} onApply={handleApplyFilter} />
-      <FilterModal visible={showFilterModal} mode="time" onClose={() => setShowFilterModal(false)} onApply={handleApplyFilter} />
-      <FilterModal visible={showLevelModal} mode="level" onClose={() => setShowLevelModal(false)} onApply={handleApplyLevel} />
-      <FilterModal visible={showUserModal} mode="userinfo" onClose={() => setShowUserModal(false)} onApply={handleApplyUserFilter} />
+      <FilterModal visible={showSortModal} mode="sort" onClose={() => setShowSortModal(false)} onApply={handleApplyFilter} filterState={filterState} />
+      <FilterModal visible={showFilterModal} mode="time" onClose={() => setShowFilterModal(false)} onApply={handleApplyFilter} filterState={filterState} />
+      <FilterModal visible={showLevelModal} mode="level" onClose={() => setShowLevelModal(false)} onApply={handleApplyFilter} filterState={filterState} />
+      <FilterModal visible={showUserModal} mode="userinfo" onClose={() => setShowUserModal(false)} onApply={handleApplyFilter} filterState={filterState} />
+      <FilterModal visible={showCategoryModal} mode="category" onClose={() => setShowCategoryModal(false)} onApply={handleApplyFilter} filterState={filterState} />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: StatusBar.currentHeight || 40,
-    paddingHorizontal: 20,
-  },
+  container: { flex: 1, backgroundColor: "#fff", paddingTop: StatusBar.currentHeight || 40, paddingHorizontal: 20 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: 10,
+    gap: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    marginHorizontal: 10,
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 12,
     paddingVertical: 8,
+    borderRadius: 8,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  filterBtn: {
+    backgroundColor: "#eee",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  selected: {
+    backgroundColor: "#d6f5e3",
+    borderColor: "#1FCC79",
+    borderWidth: 1,
   },
   filterText: {
     fontWeight: "bold",
     fontSize: 14,
-  },
-  leftFilter: {
-    alignSelf: "flex-start",
-    backgroundColor: "#eee",
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-  },
-  tagContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F3F3",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagRecommended: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EAEAFF",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: { fontSize: 16, marginLeft: 5 },
-  recipeCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 15,
-    marginHorizontal: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: "center",
-  },
-  recipeImage: { width: "100%", height: 120, backgroundColor: "#eee" },
-  recipeName: { fontSize: 14, fontWeight: "bold", padding: 8, textAlign: "center" },
-  statsContainer: { flexDirection: "row", justifyContent: "center", paddingBottom: 8 },
-  statItem: { flexDirection: "row", alignItems: "center", marginHorizontal: 8 },
-  statText: { fontSize: 14, marginLeft: 4, color: "#444" },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  optionsContainer: {
-    marginBottom: 16,
-  },
-  optionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    backgroundColor: "#eee",
-    marginVertical: 6,
-  },
-  optionButtonSelected: {
-    backgroundColor: "#1FCC79",
-  },
-  optionText: {
-    fontSize: 16,
     color: "#333",
   },
-  optionTextSelected: {
-    color: "#fff",
+  recipeCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    marginBottom: 16,
+    marginHorizontal: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  recipeImage: {
+    width: "100%",
+    height: 160,
+    backgroundColor: "#eee",
+    resizeMode: "cover",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  recipeName: {
     fontWeight: "bold",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cancelButton: {
-    backgroundColor: "#ccc",
-    padding: 10,
-    borderRadius: 8,
-  },
-  applyButton: {
-    backgroundColor: "#1FCC79",
-    padding: 10,
-    borderRadius: 8,
+    fontSize: 16,
+    marginHorizontal: 12,
+    marginTop: 10,
   },
   recipeTime: {
     fontSize: 13,
     color: "#666",
-    textAlign: "center",
-    marginBottom: 4,
+    fontWeight: "500",
+    marginHorizontal: 12,
+    marginTop: 4,
   },
-  cancelText: { color: "#000" },
-  applyText: { color: "#fff", fontWeight: "bold" },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginHorizontal: 12,
+    marginTop: 6,
+    marginBottom: 10,
+    gap: 20,
+  },
+  statItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  statText: { fontWeight: "600", fontSize: 13, color: "#333" },
 });
 
 export default SearchScreen;

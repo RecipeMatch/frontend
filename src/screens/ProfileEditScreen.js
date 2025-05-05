@@ -193,11 +193,11 @@ const ProfileEditScreen = () => {
         name: "voice.m4a",
         type: "audio/m4a",
       };
-
+  
       const formData = new FormData();
       formData.append("file", fileBlob);
       formData.append("model", "whisper-1");
-
+  
       const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
         headers: {
@@ -206,14 +206,26 @@ const ProfileEditScreen = () => {
         },
         body: formData,
       });
-
+  
       const result = await response.json();
-      if (result.text) {
-        setTranscript(result.text);
-        setIngredientNames(result.text.split(","));
-      } else {
-        Alert.alert("⚠️ 음성 인식 실패", JSON.stringify(result));
-      }
+if (result.text) {
+  setTranscript(result.text);
+
+  const newIngredients = result.text
+    .split(",")
+    .map((item) => item.trim()) // 공백 제거
+    .filter((item) => item.length > 0); // 빈 문자열 제거
+
+  setIngredientNames((prev) => {
+    const combined = [...prev, ...newIngredients];
+    const unique = Array.from(new Set(combined)); // 중복 제거
+    return unique;
+  });
+
+} else {
+  Alert.alert("⚠️ 음성 인식 실패", JSON.stringify(result));
+}
+
     } catch (err) {
       console.error("🔁 Whisper 업로드 실패:", err);
       Alert.alert("에러", "음성 인식 도중 오류가 발생했습니다.");
@@ -221,6 +233,7 @@ const ProfileEditScreen = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -303,26 +316,50 @@ const ProfileEditScreen = () => {
           ))}
 
           <Text style={styles.label}>주로 사용하는 재료</Text>
-          <TouchableOpacity
-  onPress={recording ? stopRecording : startRecording}
-  style={styles.addButton}
->
-  <Text style={styles.addButtonText}>
-    {recording ? "녹음 중지" : "음성으로 입력"}
-  </Text>
-</TouchableOpacity>
+          <View style={{ flexDirection: "row", marginTop: 10 }}>
+  <TouchableOpacity
+    onPress={recording ? stopRecording : startRecording}
+    style={[styles.addButton, { marginRight: 10 }]}
+  >
+    <Text style={styles.addButtonText}>
+      {recording ? "녹음 중지" : "음성으로 입력"}
+    </Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => addItem(setIngredientNames)}
+    style={styles.addButton}
+  >
+    <Text style={styles.addButtonText}>재료 추가하기</Text>
+  </TouchableOpacity>
+</View>
 
 
-          {ingredientNames.map((item, index) => (
-            <View key={index} style={styles.selectedRow}>
-              <View style={styles.selectedItemBox}>
-                <Text style={styles.selectedItem}>{item}</Text>
-              </View>
-              <TouchableOpacity onPress={() => removeItem(setIngredientNames, index)}>
-                <Ionicons name="trash-outline" size={24} color="red" />
-              </TouchableOpacity>
-            </View>
-          ))}
+
+
+{ingredientNames.map((item, index) => (
+  <View key={index} style={styles.selectedRow}>
+    <View style={styles.selectedItemBox}>
+    <TextInput
+  value={item}
+  onChangeText={(text) => {
+    setIngredientNames((prev) => {
+      const updated = [...prev];
+      updated[index] = text;
+      return updated;
+    });
+  }}
+  style={styles.ingredientInput} // 여기!!
+  placeholder="재료를 입력하세요"
+/>
+
+    </View>
+    <TouchableOpacity onPress={() => removeItem(setIngredientNames, index)}>
+      <Ionicons name="trash-outline" size={24} color="red" />
+    </TouchableOpacity>
+  </View>
+))}
+
 
           <TouchableOpacity onPress={handleUpdate} style={styles.button}>
             <Text style={styles.buttonText}>수정 완료</Text>
@@ -399,6 +436,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
+  ingredientInput: {
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+  },
+  
 });
 
 export default ProfileEditScreen;

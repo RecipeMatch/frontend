@@ -1,13 +1,40 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from "react-native";
+import { Image } from 'react-native';
+import { Linking } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomTab from "../../components/BottomTab";
-
+import { useEffect } from "react";
+import { API_BASE_URL } from "@env";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [searchText, setSearchText] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+
+  useEffect(() => {
+    console.log("✅ 현재 API_BASE_URL:", API_BASE_URL);
+  }, []);
+  const searchProducts = async () => {
+    if (!searchKeyword.trim()) {
+      Alert.alert("검색어를 입력해주세요!");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/search/recommendations/products?keyword=${encodeURIComponent(searchKeyword)}`);
+      const data = await response.json();
+      console.log("🔍 검색 결과:", data.products);
+      setSearchResults(data.products);
+    } catch (error) {
+      console.error("검색 실패:", error);
+      Alert.alert("검색 실패", "상품을 불러오지 못했습니다.");
+    }
+  };
+  
+  
 
   // 🔹 임시 데이터
   const recommendedRecipes = [
@@ -53,10 +80,29 @@ const HomeScreen = () => {
                 horizontal
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.recipeCard}>
-                    <Text style={styles.recipeEmoji}>{item.image}</Text>
-                    <Text style={styles.recipeText}>{item.name}</Text>
-                  </TouchableOpacity>
+                  <TouchableOpacity 
+  style={styles.searchProductCard}
+  onPress={() => {
+    if (item.productUrl) {
+      Linking.openURL(item.productUrl);
+    } else {
+      Alert.alert("링크 없음", "해당 상품 링크가 없습니다.");
+    }
+  }}
+>
+  <Image
+    source={{ uri: item.imageUrl }}
+    style={styles.searchProductImage}
+  />
+  <Text style={styles.searchProductName} numberOfLines={2}>
+    {item.name}
+  </Text>
+  <Text style={styles.searchProductPrice}>
+    {item.price ? `${item.price.toLocaleString()}원` : "가격정보 없음"}
+  </Text>
+</TouchableOpacity>
+
+
                 )}
                 showsHorizontalScrollIndicator={false}
               />
@@ -78,7 +124,7 @@ const HomeScreen = () => {
           )}
           ListFooterComponent={
             <>
-              {/* 🛒 상품 추천 */}
+              {/* 🛒 추천 상품 */}
               <Text style={styles.sectionTitle}>추천 상품</Text>
               <FlatList
                 data={recommendedProducts}
@@ -92,19 +138,72 @@ const HomeScreen = () => {
                 )}
                 showsHorizontalScrollIndicator={false}
               />
-              
-              {/* 🛒 모든 레시피 보기 버튼 (하단) */}
+          
+              {/* 🛒 모든 레시피 보기 버튼 */}
               <TouchableOpacity 
                 style={styles.allRecipesButton} 
                 onPress={() => navigation.navigate("AllRecipesScreen")}
               >
                 <Text style={styles.allRecipesButtonText}>모든 레시피 보기</Text>
               </TouchableOpacity>
+          
+              {/* 🔎 상품 검색 (NEW) */}
+              <View style={{ marginTop: 20 }}>
+                <Text style={styles.sectionTitle}>상품 검색</Text>
+          
+                {/* 검색 입력창 */}
+                <View style={styles.searchContainer}>
+                  <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="상품 검색어 입력..."
+                    value={searchKeyword}
+                    onChangeText={setSearchKeyword}
+                    onSubmitEditing={searchProducts}
+                  />
+                </View>
+          
+                {/* 검색 결과 리스트 */}
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item, index) => index.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+  style={styles.searchProductListItem}
+  onPress={() => {
+    if (item.productUrl) {
+      Linking.openURL(item.productUrl);
+    } else {
+      Alert.alert("링크 없음", "해당 상품 링크가 없습니다.");
+    }
+  }}
+>
+  <Image
+    source={{ uri: item.imageUrl }}
+    style={styles.searchProductListImage}
+  />
+  <View style={styles.searchProductListInfo}>
+    <Text style={styles.searchProductListName} numberOfLines={2}>
+      {item.name}
+    </Text>
+    <Text style={styles.searchProductListPrice}>
+      {item.price ? `${item.price.toLocaleString()}원` : "가격정보 없음"}
+    </Text>
+  </View>
+</TouchableOpacity>
 
-              {/* 하단 여백 추가 */}
-              <View style={{ height: 80 }} />
+                  )}
+                  ListEmptyComponent={<Text style={{ textAlign: "center", color: "#888", marginTop: 10 }}>검색 결과가 없습니다.</Text>}
+                  showsVerticalScrollIndicator={false}
+                  style={{ marginTop: 10 }}
+                />
+              </View>
+          
+              {/* 하단 여백 */}
+              <View style={{ height: 350 }} />
             </>
           }
+          
         />
 
         {/* 🔻 하단 네비게이션 바 */}
@@ -176,6 +275,82 @@ const styles = StyleSheet.create({
     paddingVertical: 10 
   },
   tabButton: { alignItems: "center" },
+  searchResultItem: { 
+    paddingVertical: 10, 
+    borderBottomWidth: 1, 
+    borderBottomColor: "#eee" 
+  },
+  searchResultText: { 
+    fontSize: 16, 
+    color: "#333" 
+  },
+  searchProductCard: {
+    backgroundColor: "#FFF5E1",
+    borderRadius: 10,
+    padding: 14,
+    marginRight: 14,   // 🔥 여백 크게
+    alignItems: "center",
+    width: 160,        // 🔥 박스 크기 키움 (기존 130 → 160)
+  },
+  
+  searchProductImage: {
+    width: 80,         // 🔥 이미지 크기도 조금 키움
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  
+  searchProductName: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
+  },
+  
+  searchProductPrice: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 6,
+  },
+  searchProductListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF5E1", // 🔥 추천 상품 카드랑 통일
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  
+  searchProductListImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  
+  searchProductListInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  
+  searchProductListName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4a3c31",  // 재료/상품 이름 색상
+  },
+  
+  searchProductListPrice: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  
+  
+  
 });
 
 export default HomeScreen;
