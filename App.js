@@ -26,6 +26,9 @@ import CommunityDetailScreen from "./src/screens/CommunityDetailScreen";
 import CommunityEditScreen from "./src/screens/CommunityEditScreen";
 import FilterModal from "./src/screens/FilterModal";
 import MyCommunityScreen from "./src/screens/MyCommunityScreen";
+import CommentItem from "./src/screens/CommentItem";
+import LikedRecipes from "./src/screens/LikedRecipes";
+import BookmarkedRecipes from "./src/screens/BookmarkedRecipes";
 
 if (__DEV__) {
   LogBox.ignoreLogs([
@@ -51,14 +54,18 @@ function NavigationProvider() {
         <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: false }} /> 
         <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ headerShown: false }} />
         <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ headerShown: false }} />
-        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Community" component={CommunityScreen} options={{ headerShown: false }} /> 
+        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="Community" component={CommunityScreen} options={{ headerShown: false }}/> 
         <Stack.Screen name="CommunityCreate" component={CommunityCreateScreen} options={{ headerShown: false }} />
         <Stack.Screen name="CommunityList" component={CommunityListScreen} options={{ headerShown: false }} />
         <Stack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
         <Stack.Screen name="CommunityEdit" component={CommunityEditScreen} options={{ headerShown: false }} />
         <Stack.Screen name="FilterModal" component={FilterModal} options={{ headerShown: false }} />
         <Stack.Screen name="MyCommunityScreen" component={MyCommunityScreen}  options={{ headerShown: false }} />
+        <Stack.Screen name="CommentItem" component={CommentItem} options={{ headerShown: false }} />  
+        <Stack.Screen name="LikedRecipes" component={LikedRecipes} options={{ headerShown: false }} />
+        <Stack.Screen name="BookmarkedRecipes" component={BookmarkedRecipes} options={{ headerShown: false }} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
