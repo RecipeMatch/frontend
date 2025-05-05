@@ -123,6 +123,16 @@ export default function ProfileScreen() {
       <TouchableOpacity onPress={() => navigation.navigate("MyRecipeList")} style={styles.button}>
         <Text style={styles.buttonText}>나의 레시피</Text>
       </TouchableOpacity>
+      {/* 좋아요한 레시피 보기 버튼 */}
+     <TouchableOpacity onPress={() => navigation.navigate("LikedRecipes")} style={styles.button}>
+      <Text style={styles.buttonText}>좋아요한 레시피</Text>
+     </TouchableOpacity>
+
+     {/* 즐겨찾기한 레시피 보기 버튼 */}
+     <TouchableOpacity onPress={() => navigation.navigate("BookmarkedRecipes")} style={styles.button}>
+      <Text style={styles.buttonText}>즐겨찾기한 레시피</Text>
+     </TouchableOpacity>
+
 
       {/* 로그아웃 버튼 */}
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
