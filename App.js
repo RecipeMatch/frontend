@@ -26,6 +26,9 @@ import CommunityDetailScreen from "./src/screens/CommunityDetailScreen";
 import CommunityEditScreen from "./src/screens/CommunityEditScreen";
 import FilterModal from "./src/screens/FilterModal";
 import MyCommunityScreen from "./src/screens/MyCommunityScreen";
+import CommentItem from "./src/screens/CommentItem";
+import LikedRecipes from "./src/screens/LikedRecipes";
+import BookmarkedRecipes from "./src/screens/BookmarkedRecipes";
 
 if (__DEV__) {
   LogBox.ignoreLogs([
@@ -48,17 +51,21 @@ function NavigationProvider() {
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MyRecipeList" component={Myrecipe} options={{ headerShown: false }} />
-        <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: true, title: "레시피 상세" }} /> 
-        <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ title: "레시피 수정 (1/2)" }} />
-        <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ title: "레시피 수정 (2/2)" }} />
-        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ title: "모든 레시피" }} />
-        <Stack.Screen name="Community" component={CommunityScreen} /> 
-        <Stack.Screen name="CommunityCreate" component={CommunityCreateScreen} options={{ title: "게시글 생성" }} />
-        <Stack.Screen name="CommunityList" component={CommunityListScreen} options={{ title: "게시글 생성" }} />
-        <Stack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ title: "게시글 상세" }} />
-        <Stack.Screen name="CommunityEdit" component={CommunityEditScreen} options={{ title: "게시글 수정정" }} />
-        <Stack.Screen name="FilterModal" component={FilterModal} options={{ title: "필터" }} />
-        <Stack.Screen name="MyCommunityScreen" component={MyCommunityScreen}  options={{ title: "나의 글 보기" }} />
+        <Stack.Screen name="RecipeDetail" component={RecipeDetail} options={{ headerShown: false }} /> 
+        <Stack.Screen name="RecipeEdit1" component={RecipeEdit1} options={{ headerShown: false }} />
+        <Stack.Screen name="RecipeEdit2" component={RecipeEdit2} options={{ headerShown: false }} />
+        <Stack.Screen name="AllRecipesScreen" component={AllRecipesScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="Community" component={CommunityScreen} options={{ headerShown: false }}/> 
+        <Stack.Screen name="CommunityCreate" component={CommunityCreateScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="CommunityList" component={CommunityListScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="CommunityEdit" component={CommunityEditScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="FilterModal" component={FilterModal} options={{ headerShown: false }} />
+        <Stack.Screen name="MyCommunityScreen" component={MyCommunityScreen}  options={{ headerShown: false }} />
+        <Stack.Screen name="CommentItem" component={CommentItem} options={{ headerShown: false }} />  
+        <Stack.Screen name="LikedRecipes" component={LikedRecipes} options={{ headerShown: false }} />
+        <Stack.Screen name="BookmarkedRecipes" component={BookmarkedRecipes} options={{ headerShown: false }} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
