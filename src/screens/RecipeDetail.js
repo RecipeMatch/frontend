@@ -21,25 +21,17 @@ import Tts from "react-native-tts";
 
 const RecipeDetail = ({ route }) => {
   useEffect(() => {
-    const saveSearchHistory = async () => {
+    const fetchRecipeDetail = async () => {
       try {
         const userUid = userInfo?.uid;
-        if (userUid && recipe?.id) {
-          await fetch(`${API_BASE_URL}/api/history`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userUid,
-              recipeId: recipe.id,
-              category: recipe.category || "DEFAULT",
-            }),
-          });
-        }
-      } catch (e) {
-        console.error("🔴 검색 기록 저장 실패:", e);
+        const response = await fetch(`${API_BASE_URL}/api/recipes/${initialRecipe.id}?uid=${userUid}`);
+        const data = await response.json();
+      } 
+      catch (e) {
+        console.error("레시피 상세 조회 실패:", e);
       }
     };
-    saveSearchHistory();
+    fetchRecipeDetail();
   }, []);
 
   useEffect(() => {
@@ -50,8 +42,9 @@ const RecipeDetail = ({ route }) => {
   const { recipe: initialRecipe } = route.params;
   const { userInfo } = useContext(AuthContext);
   const [recipe] = useState(initialRecipe);
-  const alterToolsList =
-    recipe.alterTools?.split(",").map((item) => item.trim()) || [];
+  const alterToolsList = recipe?.alterTools
+  ? recipe.alterTools.split(",").map((item) => item.trim())
+  : [];
   const [comments, setComments] = useState([]);
   const [ingredientQuantities, setIngredientQuantities] = useState([]);
   const [commentText, setCommentText] = useState("");
@@ -77,6 +70,39 @@ const RecipeDetail = ({ route }) => {
     fetchComments();
     fetchIngredientQuantities();
     Tts.setDefaultLanguage("ko-KR");
+  }, []);
+
+  useEffect(() => {
+    const saveHistory = async () => {
+      try {
+        const userUid = userInfo?.uid;
+        const recipeId = recipe?.id;
+
+        console.log("🧭 방문 기록 저장 시도", { userUid, recipeId });
+
+        if (!userUid || !recipeId) {
+          console.warn("⚠️ userUid 또는 recipeId가 없습니다.");
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userUid, recipeId }),
+        });
+
+        if (response.ok) {
+          console.log("✅ 방문 기록 저장 성공");
+        } else {
+          const errorText = await response.text();
+          console.error("❌ 서버 응답 실패:", response.status, errorText);
+        }
+      } catch (e) {
+        console.error("❌ 방문 기록 저장 중 오류 발생:", e);
+      }
+    };
+
+    saveHistory();
   }, []);
 
   // 👇 RecipeDetail 컴포넌트 안에 추가
@@ -105,7 +131,16 @@ const RecipeDetail = ({ route }) => {
       return null;
     }
 
+    
+  if (!recipe) {
     return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>레시피 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  return (
       <View style={{ marginTop: 24 }}>
         <Text style={styles.sectionTitle}>부족한 재료 추천 상품</Text>
         {products.map((item, index) => (
