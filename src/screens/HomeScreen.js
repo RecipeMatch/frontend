@@ -16,13 +16,19 @@ const HomeScreen = ({ navigation }) => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [recommendedRecipes, setRecommendedRecipes] = useState([]);
-  const [recommendedProducts] = useState([
-    { id: "1", name: "돼지고기", price: "₩12,000" },
-    { id: "2", name: "두부", price: "₩3,500" },
-    { id: "3", name: "고추장", price: "₩5,000" },
-  ]);
   const [nearbyStores, setNearbyStores] = useState([]);
   const [location, setLocation] = useState(null);
+
+  const categoryImages = {
+    KOREAN: require("../../assets/images/Korean.png"),
+    CHINESE: require("../../assets/images/Chinese.png"),
+    JAPANESE: require("../../assets/images/Japanese.png"),
+    WESTERN: require("../../assets/images/Western.png"),
+    SOUTHEAST_ASIAN: require("../../assets/images/SoutheastAsian.png"),
+    ITALIAN: require("../../assets/images/Italian.png"),
+    FUSION: require("../../assets/images/Fusion.png"),
+    DEFAULT: require("../../assets/images/Default.png"),
+  };
 
   useEffect(() => {
     let subscription;
@@ -139,23 +145,30 @@ const HomeScreen = ({ navigation }) => {
                 data={recommendedRecipes}
                 horizontal
                 keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.searchProductCard}
-                    onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
-                  >
-                    <Image
-                      source={{ uri: item.imageUrls?.[0] || "https://via.placeholder.com/80" }}
-                      style={styles.searchProductImage}
-                    />
-                    <Text style={styles.searchProductName} numberOfLines={2}>
-                      {item.recipeName}
-                    </Text>
-                    <Text style={styles.searchProductPrice}>
-                      {item.cookingTime ? `${item.cookingTime}분` : "시간정보 없음"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                  const hasImage = item.imageUrls && item.imageUrls.length > 0;
+                  const finalImageSource = hasImage
+                    ? { uri: item.imageUrls[0] }
+                    : categoryImages[item.category] || categoryImages["기본"]; // 🧠 카테고리 기반 기본 이미지
+
+                  return (
+                    <TouchableOpacity
+                      style={styles.searchProductCard}
+                      onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+                    >
+                      <Image
+                        source={finalImageSource}
+                        style={styles.searchProductImage}
+                      />
+                      <Text style={styles.searchProductName} numberOfLines={2}>
+                        {item.recipeName}
+                      </Text>
+                      <Text style={styles.searchProductPrice}>
+                        {item.cookingTime ? `${item.cookingTime}분` : "시간정보 없음"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
                 showsHorizontalScrollIndicator={false}
               />
 
@@ -199,20 +212,6 @@ const HomeScreen = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
               ))}
-
-              <Text style={styles.sectionTitle}>추천 상품</Text>
-              <FlatList
-                data={recommendedProducts}
-                horizontal
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.productCard}>
-                    <Text style={styles.productText}>{item.name}</Text>
-                    <Text style={styles.productPrice}>{item.price}</Text>
-                  </TouchableOpacity>
-                )}
-                showsHorizontalScrollIndicator={false}
-              />
 
               <Text style={styles.sectionTitle}>상품 검색</Text>
               <View style={styles.searchContainer}>

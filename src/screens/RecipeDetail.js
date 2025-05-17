@@ -23,9 +23,37 @@ const RecipeDetail = ({ route }) => {
   const navigation = useNavigation();
   const { recipe: initialRecipe } = route.params;
   const { userInfo } = useContext(AuthContext);
-  const [recipe] = useState(initialRecipe);
+  const [recipe, setRecipe] = useState(null);
+
+  console.log("🧾 전달받은 initialRecipe:", initialRecipe);
+
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const url = `${API_BASE_URL}/api/recipe?recipeId=${initialRecipe.id}&userUid=${userInfo.uid}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        console.log("📦 받아온 레시피 데이터:", data);
+
+        if (data?.errorCode) {
+          console.error("❌ 서버 에러 발생:", data.message);
+          Alert.alert("레시피 불러오기 실패", data.message || "알 수 없는 오류가 발생했습니다.");
+          return;
+        }
+
+        setRecipe(data);
+      } catch (error) {
+        console.error("🚨 네트워크/서버 오류:", error);
+        Alert.alert("서버 오류", "레시피 정보를 불러오는 중 문제가 발생했습니다.");
+      }
+    };
+
+    fetchRecipe();
+  }, []);
+
   const alterToolsList =
-    recipe.alterTools?.split(",").map((item) => item.trim()) || [];
+    recipe?.alterTools?.split(",").map((item) => item.trim()) || [];
   const [comments, setComments] = useState([]);
   const [ingredientQuantities, setIngredientQuantities] = useState([]);
   const [commentText, setCommentText] = useState("");
@@ -39,13 +67,49 @@ const RecipeDetail = ({ route }) => {
     initialRecipe.bookMarkSize ?? 0
   );
   const uploadedImageUrl =
-    recipe.imageUrls?.length > 0 && typeof recipe.imageUrls[0] === "string"
-      ? recipe.imageUrls[0]
+    recipe?.imageUrls?.length > 0 && typeof recipe?.imageUrls[0] === "string"
+      ? recipe?.imageUrls[0]
       : null;
 
   const finalImageSource = uploadedImageUrl
     ? { uri: uploadedImageUrl }
-    : getDefaultImageUrl(recipe.category); // 이 부분을 getDefaultImageUrl로 수정
+    : getDefaultImageUrl(recipe?.category); // 이 부분을 getDefaultImageUrl로 수정
+  const categoryMap = {
+    KOREAN: "한식",
+    CHINESE: "중식",
+    JAPANESE: "일식",
+    WESTERN: "양식",
+    SOUTHEAST_ASIAN: "동남아시아아",
+    ITALIAN: "이탈리안",
+    FUSION: "퓨전",
+    DEFAULT: "기본"
+  };
+
+  const difficultyMap = {
+    EASY: "쉬움",
+    MIDDLE: "중간",
+    HARD: "어려움",
+  };
+  const allergyMap = {
+    EGG: "달걀",
+    MILK: "우유",
+    WHEAT: "밀",
+    PEANUT: "땅콩",
+    SOYBEAN: "대두",
+    FISH: "생선",
+    SHELLFISH: "조개류",
+    CRUSTACEAN: "갑각류",
+    TREE_NUT: "견과류",
+    BUCKWHEAT: "메밀",
+    BEEF: "소고기",
+    PORK: "돼지고기",
+    CHICKEN: "닭고기",
+    TOMATO: "토마토",
+    SULFITE: "아황산류",
+    MOLLUSK: "연체동물",
+    SESAME: "참깨",
+  };
+
 
   useEffect(() => {
     fetchComments();
@@ -125,7 +189,7 @@ const RecipeDetail = ({ route }) => {
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/recipes/${recipe.id}/comments`
+        `${API_BASE_URL}/api/recipes/${recipe?.id}/comments`
       );
       setComments(await res.json());
     } catch (e) {
@@ -137,7 +201,7 @@ const RecipeDetail = ({ route }) => {
   const fetchIngredientQuantities = async () => {
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/recipe_ingredient?recipeId=${recipe.id}`
+        `${API_BASE_URL}/api/recipe_ingredient?recipeId=${recipe?.id}`
       );
       const data = await res.json();
       setIngredientQuantities(data);
@@ -153,7 +217,7 @@ const RecipeDetail = ({ route }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipeId: recipe.id,
+          recipeId: recipe?.id,
           content: commentText,
           userUid: userInfo.uid,
         }),
@@ -169,7 +233,7 @@ const RecipeDetail = ({ route }) => {
   const toggleLike = async () => {
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/recipe/like?recipeId=${recipe.id}&userUid=${userInfo.uid}`,
+        `${API_BASE_URL}/api/recipe/like?recipeId=${recipe?.id}&userUid=${userInfo.uid}`,
         {
           method: "POST",
         }
@@ -186,7 +250,7 @@ const RecipeDetail = ({ route }) => {
   const toggleBookmark = async () => {
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/recipe/bookmark?recipeId=${recipe.id}&userUid=${userInfo.uid}`,
+        `${API_BASE_URL}/api/recipe/bookmark?recipeId=${recipe?.id}&userUid=${userInfo.uid}`,
         {
           method: "POST",
         }
@@ -200,7 +264,7 @@ const RecipeDetail = ({ route }) => {
     }
   };
 
-  const finalImageUrl = recipe.urls?.[0] ?? getDefaultImageUrl(recipe.category);
+  const finalImageUrl = recipe?.urls?.[0] ?? getDefaultImageUrl(recipe?.category);
 
   const CookingTimer = ({ totalMinutes }) => {
     const initialSeconds = isNaN(Number(totalMinutes))
@@ -276,7 +340,7 @@ const RecipeDetail = ({ route }) => {
         enableOnAndroid={true}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>{recipe.recipeName}</Text>
+        <Text style={styles.title}>{recipe?.recipeName}</Text>
         <ImageBackground
           source={finalImageSource}
           style={styles.recipeImage}
@@ -306,61 +370,48 @@ const RecipeDetail = ({ route }) => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.description}>{recipe.description}</Text>
+        <Text style={styles.description}>{recipe?.description}</Text>
 
         <Text style={styles.sectionTitle}>요리 시간</Text>
-        <Text style={styles.info}>{recipe.cookingTime}분</Text>
-        <CookingTimer totalMinutes={recipe.cookingTime || 30} />
+        <Text style={styles.info}>{recipe?.cookingTime}분</Text>
+        <CookingTimer totalMinutes={recipe?.cookingTime || 30} />
 
         <Text style={styles.sectionTitle}>카테고리</Text>
-        <Text style={styles.info}>{recipe.category}</Text>
+        <Text style={styles.info}>
+          {categoryMap[recipe?.category] || recipe?.category}
+        </Text>
 
         <Text style={styles.sectionTitle}>난이도</Text>
-        <Text style={styles.info}>{recipe.difficulty || "정보 없음"}</Text>
+        <Text style={styles.info}>
+          {difficultyMap[recipe?.difficulty] || recipe?.difficulty}
+        </Text>
 
         <Text style={styles.sectionTitle}>재료</Text>
-        {recipe.recipeIngredientDtos.map((i, idx) => (
+        {(recipe?.recipeIngredientDtos ?? []).map((i, idx) => (
           <View key={idx} style={styles.ingredientCard}>
             <Text style={styles.ingredientName}>{i.ingredientName}</Text>
             <Text style={styles.ingredientQty}>{i.quantity}</Text>
           </View>
         ))}
 
-        {recipe.allergies?.length > 0 && (
+        {(recipe?.allergies ?? []).length > 0 && (
           <>
             <Text style={styles.sectionTitle}>알레르기 유발 재료</Text>
             {recipe.allergies.map((a, idx) => (
               <View key={idx} style={styles.infoCard}>
-                <Text style={styles.infoCardText}>{a}</Text>
+                <Text style={styles.infoCardText}>{allergyMap[a] || a}</Text>
               </View>
             ))}
           </>
         )}
-        {/*
-        <Text style={styles.sectionTitle}>도구</Text>
-        {recipe.toolName.map((t, idx) => (
-  <View key={idx} style={styles.infoCard}>
-    <Text style={styles.infoCardText}>{t}</Text>
-  </View>
-))}
 
-
-        {!!recipe.alterTools?.trim() && (
-          <>
-            <Text style={styles.sectionTitle}>대체 도구</Text>
-            <View style={styles.infoCard}>
-    <Text style={styles.infoCardText}>{recipe.alterTools}</Text>
-  </View>
-          </>
-        )}
-*/}
         <MissingIngredientsSection
-          recipeId={recipe.id}
+          recipeId={recipe?.id}
           userUid={userInfo.uid}
         />
         <Text style={styles.sectionTitle}>도구 대체 도구</Text>
 
-        {recipe.toolName.map((tool, idx) => (
+        {(recipe?.toolName ?? []).map((tool, idx) => (
           <View key={idx} style={styles.toolCard}>
             <View style={styles.toolPair}>
               <Text style={styles.toolText}>{tool}</Text>
@@ -370,7 +421,7 @@ const RecipeDetail = ({ route }) => {
         ))}
 
         <Text style={styles.sectionTitle}>순서</Text>
-        {recipe.recipeStepDtos.map((s, idx) => (
+        {(recipe?.recipeStepDtos ?? []).map((s, idx) => (
           <View
             key={idx}
             style={{
@@ -401,7 +452,7 @@ const RecipeDetail = ({ route }) => {
         {loading ? null : comments.length === 0 ? (
           <Text style={styles.emptyText}>등록된 댓글이 없습니다.</Text>
         ) : (
-          comments.map((item) => (
+          (Array.isArray(comments) ? comments : []).map((item) => (
             <View key={item.id} style={styles.commentBubble}>
               <Text style={styles.commentAuthor}>{item.nickname}</Text>
               <Text style={styles.commentText}>{item.content}</Text>
