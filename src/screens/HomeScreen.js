@@ -94,18 +94,25 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchRecommendedRecipes = async () => {
     try {
+      const token = await AsyncStorage.getItem("userToken");
       const userUid = await AsyncStorage.getItem("userUid");
-      if (!userUid) return;
-      const response = await axios.post(`${API_BASE_URL}/api/history/recommended`, null, {
-        params: { userUid },
-      });
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/history/recommended?userUid=${encodeURIComponent(userUid)}&userInfo=true`,
+        {}, // ✅ 바디는 비움
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       console.log("✅ 추천 레시피 응답:", response.data);
       setRecommendedRecipes(response.data);
     } catch (error) {
-      console.error("추천 레시피 실패:", error);
+      console.error("❌ 추천 레시피 실패:", error.response?.data || error.message);
     }
   };
-
 
   const searchProducts = async () => {
     if (!searchKeyword.trim()) {
