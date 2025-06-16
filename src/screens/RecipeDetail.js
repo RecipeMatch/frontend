@@ -108,6 +108,7 @@ const RecipeDetail = ({ route }) => {
     SULFITE: "아황산류",
     MOLLUSK: "연체동물",
     SESAME: "참깨",
+    SHRIMP: "새우",
   };
 
 
