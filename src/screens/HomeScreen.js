@@ -3,13 +3,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  StyleSheet, SafeAreaView, StatusBar, Alert, Image, Linking, Dimensions
+  StyleSheet, SafeAreaView, StatusBar, Alert, Image, Linking
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL, KAKAO_REST_API_KEY } from "@env";
 import BottomTab from "../../components/BottomTab";
 import * as Location from "expo-location";
 import KakaoMapView from "../components/KakaoMapView.js";
+import CheckBox from "expo-checkbox";
 
 const HomeScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState("");
@@ -18,6 +19,7 @@ const HomeScreen = ({ navigation }) => {
   const [recommendedRecipes, setRecommendedRecipes] = useState([]);
   const [nearbyStores, setNearbyStores] = useState([]);
   const [location, setLocation] = useState(null);
+  const [filterByIngredients, setFilterByIngredients] = useState(false);
 
   const categoryImages = {
     KOREAN: require("../../assets/images/Korean.png"),
@@ -47,7 +49,6 @@ const HomeScreen = ({ navigation }) => {
           distanceInterval: 5,
         },
         (loc) => {
-          console.log("📡 실시간 위치 업데이트:", loc.coords);
           setLocation(loc.coords);
         }
       );
@@ -67,7 +68,7 @@ const HomeScreen = ({ navigation }) => {
   }, [location]);
 
   useEffect(() => {
-    fetchRecommendedRecipes();
+    fetchRecommendedRecipes(false);
   }, []);
 
   const fetchNearbyStores = async (lat, lon) => {
@@ -77,40 +78,26 @@ const HomeScreen = ({ navigation }) => {
         headers: { Authorization: `KakaoAK ${KAKAO_REST_API_KEY}` },
       });
       const data = await response.json();
-      console.log("📍 Kakao 전체 응답:", data);
       const stores = Array.isArray(data.documents) ? data.documents : [];
-
-      // 거리순 정렬 후 상위 5개만 저장
-      const sortedStores = stores
-        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
-        .slice(0, 5);
-
+      const sortedStores = stores.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)).slice(0, 5);
       setNearbyStores(sortedStores);
     } catch (e) {
-      console.error("❌ Kakao API 실패:", e);
       setNearbyStores([]);
     }
   };
 
-  const fetchRecommendedRecipes = async () => {
+  const fetchRecommendedRecipes = async (userInfo = false) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       const userUid = await AsyncStorage.getItem("userUid");
-
       const response = await axios.post(
-        `${API_BASE_URL}/api/history/recommended?userUid=${encodeURIComponent(userUid)}&userInfo=true`,
-        {}, // ✅ 바디는 비움
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API_BASE_URL}/api/history/recommended?userUid=${encodeURIComponent(userUid)}&userInfo=${userInfo}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      console.log("✅ 추천 레시피 응답:", response.data);
       setRecommendedRecipes(response.data);
     } catch (error) {
-      console.error("❌ 추천 레시피 실패:", error.response?.data || error.message);
+      console.error("추천 레시피 실패:", error.response?.data || error.message);
     }
   };
 
@@ -147,6 +134,18 @@ const HomeScreen = ({ navigation }) => {
                 />
               </View>
 
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+                <CheckBox
+                  value={filterByIngredients}
+                  onValueChange={(newValue) => {
+                    setFilterByIngredients(newValue);
+                    fetchRecommendedRecipes(newValue);
+                  }}
+                  color={filterByIngredients ? "#4630EB" : undefined}
+                />
+                <Text style={{ marginLeft: 8 }}>보유 재료에 맞게 필터링</Text>
+              </View>
+
               <Text style={styles.sectionTitle}>추천 레시피</Text>
               <FlatList
                 data={recommendedRecipes}
@@ -156,17 +155,14 @@ const HomeScreen = ({ navigation }) => {
                   const hasImage = item.imageUrls && item.imageUrls.length > 0;
                   const finalImageSource = hasImage
                     ? { uri: item.imageUrls[0] }
-                    : categoryImages[item.category] || categoryImages["기본"]; // 🧠 카테고리 기반 기본 이미지
+                    : categoryImages[item.category] || categoryImages["DEFAULT"];
 
                   return (
                     <TouchableOpacity
                       style={styles.searchProductCard}
                       onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
                     >
-                      <Image
-                        source={finalImageSource}
-                        style={styles.searchProductImage}
-                      />
+                      <Image source={finalImageSource} style={styles.searchProductImage} />
                       <Text style={styles.searchProductName} numberOfLines={2}>
                         {item.recipeName}
                       </Text>
